@@ -182,12 +182,12 @@ class SpgwuResources:
             },
         ]
 
-    """def loadfile(self, file_name):
-        """Read the file content and return content data"""
+    def loadfile(self, file_name):
+        '''Read the file content and return content data'''
         with open(file_name, 'r') as f:
             data = f.read()
             f.close()
-            return data"""
+            return data
 
 
     def _get_config_data(self, files_path):
@@ -212,7 +212,7 @@ class SpgwuResources:
                     api_version="v1",
                     metadata=kubernetes.client.V1ObjectMeta(
                         namespace=self.namespace,
-                        name="setup-af-iface.sh",
+                        name="spgwu",
                         labels={
                             "app.kubernetes.io/name": self.app.name,
                             "app": self.app.name
@@ -289,11 +289,4 @@ class SpgwuResources:
                     default_mode=493,
                 ),
             ),
-#            kubernetes.client.V1Volume(
-#                name="dp-config",
-#                config_map=kubernetes.client.V1ConfigMapVolumeSource(
-#                    name="spgwu",
-#                    default_mode=420,
-#                ),
-#            ),
         ]

@@ -19,8 +19,8 @@ set -ex
 
 iptables -I OUTPUT -p icmp --icmp-type destination-unreachable -j DROP;
 
-UL_IFACE="{{ .Values.config.spgwu.s1u.device }}-veth"
-DL_IFACE="{{ .Values.config.spgwu.sgi.device }}-veth"
+UL_IFACE="s1u-net-veth"
+DL_IFACE="sgi-net-veth"
 
 if ! ip link show $UL_IFACE; then
     s1u_mac=$(ip addr show dev s1u-net | awk '$1=="link/ether"{print $2}')
@@ -47,5 +47,3 @@ if ! ip addr show $DL_IFACE | grep inet; then
 fi
 
 ip a
-
-
