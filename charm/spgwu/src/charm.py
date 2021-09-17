@@ -20,7 +20,7 @@ from pathlib import Path
 from subprocess import check_output
 from typing import Optional
 
-from cryptography import x509
+#from cryptography import x509
 from kubernetes import kubernetes
 
 import logging
@@ -138,7 +138,7 @@ class SpgwuCharm(CharmBase):
         self.unit.status = MaintenanceStatus("patching StatefulSet for additional k8s permissions")
         # Get an API client
         api = kubernetes.client.AppsV1Api(kubernetes.client.ApiClient())
-        r = resources.MmeResources(self)
+        r = resources.SpgwuResources(self)
         # Read the StatefulSet we're deployed into
         s = api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
         # Add the required volume mounts to the spgwu container spec
@@ -198,7 +198,7 @@ class SpgwuCharm(CharmBase):
             return
         self.unit.status = MaintenanceStatus("creating k8s resources")
         # Create the Kubernetes resources needed for the spgwc
-        r = resources.SpgwcResources(self)
+        r = resources.SpgwuResources(self)
         r.apply()
 
     '''def _on_remove(self, event: RemoveEvent) -> None:
