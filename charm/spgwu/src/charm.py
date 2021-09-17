@@ -25,13 +25,13 @@ from kubernetes import kubernetes
 
 import logging
 
-from ops.charm import CharmBase
+from ops.charm import CharmBase,  InstallEvent, RemoveEvent
 from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 import resources
-
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +109,9 @@ class SpgwuCharm(CharmBase):
 
         # Default StatefulSet needs patching for extra volume mounts. Ensure that
         # the StatefulSet is patched on each invocation.
-        if not self._statefulset_patched:
-            self._patch_stateful_set()
-            self.unit.status = MaintenanceStatus("waiting for changes to apply")
+    #if not self._statefulset_patched:"""
+        self._patch_stateful_set()
+        self.unit.status = MaintenanceStatus("waiting for changes to apply")
 
         self.unit.status = ActiveStatus()
 

@@ -24,7 +24,7 @@ class SpgwuResources:
         self.core_api = kubernetes.client.CoreV1Api(kcl)
         self.auth_api = kubernetes.client.RbacAuthorizationV1Api(kcl)
 
-        self.script_path = "src/files/Scripts/*.*"
+        self.script_path = "src/files/Script/*.*"
         #self.config_path = "src/files/config/*.*"
 
     def apply(self) -> None:
