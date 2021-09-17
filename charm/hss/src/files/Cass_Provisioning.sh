@@ -14,7 +14,10 @@ isdn=19136246000
 id=1
 unreachability=1
 
-cqlsh $cassandra_ip 9042 -f /opt/c3po/hssdb/oai_db.cql
+until cqlsh $cassandra_ip 9042 --file /opt/c3po/hssdb/oai_db.cql;
+  do echo "Provisioning HSSDB";
+  sleep 2;
+done
 
 echo "hello"
 
