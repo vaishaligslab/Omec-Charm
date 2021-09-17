@@ -19,21 +19,11 @@ set -ex
 mkdir -p /opt/dp/config
 cd /opt/dp/config
 cp /etc/dp/config/{cdr.cfg,dp.cfg,log.json,static_arp.cfg} .
+S1U_DEVNAME=s1u-net-veth
+SGI_DEVNAME=sgi-net-veth
 
-
-{{- if .Values.config.sriov.enabled }}
-S1U_DEVNAME={{ .Values.config.spgwu.s1u.device }}
-{{- else }}
-S1U_DEVNAME={{ .Values.config.spgwu.s1u.device }}-veth
-{{- end }}
-{{- if .Values.config.sriov.enabled }}
-SGI_DEVNAME={{ .Values.config.spgwu.sgi.device }}
-{{- else }}
-SGI_DEVNAME={{ .Values.config.spgwu.sgi.device }}-veth
-{{- end }}
-
-#S1U_DEVNAME={{ .Values.config.spgwu.s1u.device }}
-#SGI_DEVNAME={{ .Values.config.spgwu.sgi.device }}
+#S1U_DEVNAME=s1u-net
+#SGI_DEVNAME=sgi-net
 
 WB_IPv4=$(ip -4 addr show dev ${S1U_DEVNAME} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 EB_IPv4=$(ip -4 addr show dev ${SGI_DEVNAME} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
@@ -62,6 +52,5 @@ echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> run.sh
 echo "ngic_dataplane $EAL_ARGS" >> run1.sh
 chmod +x run1.sh
 
-while true; do sleep 10000; done
-#ngic_dataplane $EAL_ARGS 
-
+#while true; do sleep 10000; done
+ngic_dataplane $EAL_ARGS

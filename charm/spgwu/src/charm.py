@@ -74,6 +74,7 @@ class SpgwuCharm(CharmBase):
                     "override": "replace",
                     "summary": "spgwu",
                     "command": """/bin/bash -xc "ip a;  /opt/dp/scripts/run.sh;" """,
+                    #"command": """/bin/bash -xc "while true; do echo 'Running spgwu'; sleep 10; done" """,
                     "startup": "enabled",
                     "environment": {
                         "POD_IP": f"{self.pod_ip}",
@@ -83,6 +84,7 @@ class SpgwuCharm(CharmBase):
         }
         scriptPath = "/opt/dp/scripts/"
         configPath = "/etc/dp/config/"
+        container = self.unit.get_container("spgwu")
         self._push_file_to_container(container, "src/files/run.sh", scriptPath, 0o755)
         self._push_file_to_container(container, "src/files/Config/*.*", configPath, 0o755)
         # Add intial Pebble config layer using the Pebble API
@@ -146,7 +148,21 @@ class SpgwuCharm(CharmBase):
         s.spec.template.spec.init_containers.extend(r.add_spgwu_init_containers)
 
         #s.spec.template.spec.containers[1].volume_mounts.extend(r.spgwu_volume_mounts)
-        #s.spec.template.spec.volumes.extend(r.spgwu_volumes)
+        s.spec.template.spec.volumes.extend(r.spgwu_volumes)
+        s.spec.template.metadata.annotations = {
+            "k8s.v1.cni.cncf.io/networks": '''[
+                {
+                    "name": "s1u-net",
+                    "interface": "s1u-net",
+                    "ips": "11.1.1.110/24" 
+                },
+                {
+                    "name": "sgi-net",
+                    "interface": "sgi-net",
+                    "ips": "13.1.1.110/24" 
+                }
+            ]''',
+        }
 
         # Patch the StatefulSet with our modified object
         api.patch_namespaced_stateful_set(name=self.app.name, namespace=self.namespace, body=s)
