@@ -26,6 +26,8 @@ class SpgwuResources:
 
         self.script_path = "src/files/Script/*.*"
         #self.config_path = "src/files/config/*.*"
+        self.runscriptPath = "src/files/*.*"
+        self.configPath = "src/files/Config/*.*"
 
     def apply(self) -> None:
         """Create the required Kubernetes resources for the dashboard"""
@@ -84,7 +86,7 @@ class SpgwuResources:
                 image = "docker.io/omecproject/pod-init:1.0.0",
                 image_pull_policy = "IfNotPresent",
                 security_context = kubernetes.client.V1SecurityContext(
-                    capabilities=V1Capabilities(add=["NET_ADMIN"])
+                    capabilities=kubernetes.client.V1Capabilities(add=["NET_ADMIN"])
     
                 ),
                  volume_mounts = [
@@ -97,23 +99,19 @@ class SpgwuResources:
             ),
         ]
 
-    @property
-    def spgwu_volume_mounts(self) -> dict:
-        """Returns the additional volume mounts for the mme-app containers"""
-        return [
-            kubernetes.client.V1VolumeMount(
-                mount_path="/opt/dp/scripts/",
-                name="dp-script",
-            ),
-            kubernetes.client.V1VolumeMount(
-                name="dp-config",
-                mount_path="/etc/dp/config",
-            ),
-            kubernetes.client.V1VolumeMount(
-                name="hugepage",
-                mount_path="/dev/hugepages",
-            ),
-        ]
+#    @property
+#    def spgwu_volume_mounts(self) -> dict:
+#        """Returns the additional volume mounts for the mme-app containers"""
+#        return [
+#            kubernetes.client.V1VolumeMount(
+#                mount_path="/abc/",
+#                name="dp-script",
+#            ),
+#            kubernetes.client.V1VolumeMount(
+#                name="dp-config",
+#                mount_path="/etc/dp/config",
+#            ),
+#        ]'''
 
 
     @property
@@ -174,7 +172,7 @@ class SpgwuResources:
                                 name="dp-comm",
                                 port=8085,
                                 protocol="UDP",
-                                node_port=32124,
+                                node_port=30020,
                             ),
                         ],
                         selector={"app.kubernetes.io/name": self.app.name},
@@ -184,12 +182,12 @@ class SpgwuResources:
             },
         ]
 
-    def loadfile(self, file_name):
+    """def loadfile(self, file_name):
         """Read the file content and return content data"""
         with open(file_name, 'r') as f:
             data = f.read()
             f.close()
-            return data
+            return data"""
 
 
     def _get_config_data(self, files_path):
@@ -205,7 +203,8 @@ class SpgwuResources:
     def _configmaps(self) -> list:
         """Return a list of ConfigMaps needed by the mme"""
         dict_script = self._get_config_data(self.script_path)
-        #dict_config = self._get_config_data(self.config_path)
+        dict_config = self._get_config_data(self.configPath)
+        dict_runscript=self._get_config_data(self.runscriptPath)
         return [
             {
                 "namespace": self.namespace,
@@ -284,27 +283,17 @@ class SpgwuResources:
         """Returns the additional volumes required by the mme"""
         return [
             kubernetes.client.V1Volume(
+                name="dp-script",
                 config_map=kubernetes.client.V1ConfigMapVolumeSource(
-                    name="dp-script",
+                    name="spgwu",
                     default_mode=493,
                 ),
             ),
-            kubernetes.client.V1Volume(
-                config_map=kubernetes.client.V1ConfigMapVolumeSource(
-                    name="dp-config",
-                    default_mode=420,
-                ),
-            ),
-           """ kubernetes.client.V1Volume(
-                name="dp-script",
-                empty_dir=kubernetes.client.V1EmptyDirVolumeSource(),
-            ),
-            kubernetes.client.V1Volume(
-                name="dp-config",
-                empty_dir=kubernetes.client.V1EmptyDirVolumeSource(),
-            ),
-            kubernetes.client.V1Volume(
-                name="hugepage",
-                host_path=kubernetes.client.V1HostPathVolumeSource(path="/"),
-            ),"""
+#            kubernetes.client.V1Volume(
+#                name="dp-config",
+#                config_map=kubernetes.client.V1ConfigMapVolumeSource(
+#                    name="spgwu",
+#                    default_mode=420,
+#                ),
+#            ),
         ]

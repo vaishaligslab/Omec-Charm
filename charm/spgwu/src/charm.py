@@ -32,6 +32,7 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 import resources
 from pathlib import Path
+from files import *
 
 logger = logging.getLogger(__name__)
 
@@ -144,8 +145,8 @@ class SpgwuCharm(CharmBase):
         # Add the required volume mounts to the spgwu container spec
         s.spec.template.spec.init_containers.extend(r.add_spgwu_init_containers)
 
-        s.spec.template.spec.containers[1].volume_mounts.extend(r.spgwu_volume_mounts)
-        s.spec.template.spec.volumes.extend(r.spgwu_volumes)
+        #s.spec.template.spec.containers[1].volume_mounts.extend(r.spgwu_volume_mounts)
+        #s.spec.template.spec.volumes.extend(r.spgwu_volumes)
 
         # Patch the StatefulSet with our modified object
         api.patch_namespaced_stateful_set(name=self.app.name, namespace=self.namespace, body=s)
@@ -200,6 +201,14 @@ class SpgwuCharm(CharmBase):
         # Create the Kubernetes resources needed for the spgwc
         r = resources.SpgwuResources(self)
         r.apply()
+
+    def _push_file_to_container(self, container, srcPath, dstPath, filePermission):
+        for filePath in glob.glob(srcPath):
+            print("Loading file name:" + filePath)
+            fileData = loadfile(filePath)
+            fileName = os.path.basename(filePath)
+            container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
+
 
     '''def _on_remove(self, event: RemoveEvent) -> None:
         """Cleanup Kubernetes resources"""
