@@ -37,11 +37,11 @@ if ! ip link show $DL_IFACE; then
     ip link set dev $DL_IFACE address $sgi_mac
 fi
 
-if ! ip addr show $UL_IFACE | grep inet; then
+if ! ip addr show $UL_IFACE | grep "inet "; then
     s1u_ip=$(ip addr show s1u-net | grep inet | grep -v inet6 | awk '{print $2}')
     ip addr add $s1u_ip dev $UL_IFACE
 fi
-if ! ip addr show $DL_IFACE | grep inet; then
+if ! ip addr show $DL_IFACE | grep "inet "; then
     sgi_ip=$(ip addr show sgi-net | grep inet | grep -v inet6 | awk '{print $2}')
     ip addr add $sgi_ip dev $DL_IFACE
 fi

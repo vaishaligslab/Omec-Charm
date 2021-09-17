@@ -154,12 +154,12 @@ class SpgwuCharm(CharmBase):
                 {
                     "name": "s1u-net",
                     "interface": "s1u-net",
-                    "ips": "11.1.1.110/24" 
+                    "ips": [ "11.1.1.110/24"] 
                 },
                 {
                     "name": "sgi-net",
                     "interface": "sgi-net",
-                    "ips": "13.1.1.110/24" 
+                    "ips": [ "13.1.1.110/24"] 
                 }
             ]''',
         }
