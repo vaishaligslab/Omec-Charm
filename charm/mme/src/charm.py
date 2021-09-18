@@ -177,6 +177,8 @@ class MmeCharm(CharmBase):
         r = resources.MmeResources(self)
         # Read the StatefulSet we're deployed into
         s = api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
+        # Add ServiceName to the specs
+        #s.spec.service_name = "mme-headless"
         # Add the required volume mounts to the mme container spec
         s.spec.template.spec.containers[1].volume_mounts.extend(r.mme_volume_mounts)
         # Add the required volume mounts to the s1ap container spec
@@ -188,8 +190,21 @@ class MmeCharm(CharmBase):
         # Add additional init containers required for mme
         s.spec.template.spec.init_containers.extend(r.add_mme_init_containers)
         # Add resource limit to each container
-        #containers = s.spec.template.spec.containers
-        #r.add_container_resource_limit(containers)
+        length = len(s.spec.template.spec.containers)
+        itr = 1
+
+        while itr < length:
+            s.spec.template.spec.containers[itr].resources = kubernetes.client.V1ResourceRequirements(
+                limits = {
+                    'cpu': '0.2',
+                    'memory': '200Mi'
+                },
+                requests = {
+                    'cpu': '0.2',
+                    'memory': '200Mi'
+                }
+            )
+            itr += 1
         # Add the required volumes to the StatefulSet spec
         s.spec.template.spec.volumes.extend(r.mme_volumes)
 
