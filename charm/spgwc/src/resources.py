@@ -212,6 +212,16 @@ class SpgwcResources:
                     field_ref = kubernetes.client.V1ObjectFieldSelector(field_path="status.podIP"),
                 ),
             ),
+            kubernetes.client.V1EnvVar(
+                name = "MEM_LIMIT",
+                value_from = kubernetes.client.V1EnvVarSource(
+                    resource_field_ref = kubernetes.client.V1ResourceFieldSelector(
+                        container_name="spgwc",
+                        resource="limits.memory",
+                        divisor="1Mi",
+                    ),
+                ),
+            ),
         ]
 
     @property

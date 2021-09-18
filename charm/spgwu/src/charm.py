@@ -49,7 +49,7 @@ class SpgwuCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.fortune_action, self._on_fortune_action)
         self.framework.observe(self.on.install, self._on_install)
-        #self.framework.observe(self.on.remove, self._on_remove)
+        self.framework.observe(self.on.remove, self._on_remove)
 
         #self._stored.set_default(things=[])
 
@@ -95,7 +95,7 @@ class SpgwuCharm(CharmBase):
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
 
-    def _on_config_changed(self, _):
+    def _on_config_changed(self, event) -> None:
         """Just an example to show how to deal with changed configuration.
 
         TEMPLATE-TODO: change this example to suit your needs.
@@ -154,12 +154,12 @@ class SpgwuCharm(CharmBase):
                 {
                     "name": "s1u-net",
                     "interface": "s1u-net",
-                    "ips": [ "11.1.1.110/24"] 
+                    "ips": ["11.1.1.110/24"]
                 },
                 {
                     "name": "sgi-net",
                     "interface": "sgi-net",
-                    "ips": [ "13.1.1.110/24"] 
+                    "ips": ["13.1.1.110/24"]
                 }
             ]''',
         }
@@ -197,6 +197,7 @@ class SpgwuCharm(CharmBase):
 
         self._authed = True
         return True
+
     @property
     def namespace(self) -> str:
         with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
@@ -206,7 +207,7 @@ class SpgwuCharm(CharmBase):
     def pod_ip(self) -> Optional[IPv4Address]:
         return IPv4Address(check_output(["unit-get", "private-address"]).decode().strip())
 
-    def _on_install(self, _):
+    def _on_install(self, event: InstallEvent) -> None:
         """Event handler for InstallEvent during which we will update the K8s service."""
 
         """Handle the install event, create Kubernetes resources"""
@@ -225,17 +226,15 @@ class SpgwuCharm(CharmBase):
             fileName = os.path.basename(filePath)
             container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
 
-
-    '''def _on_remove(self, event: RemoveEvent) -> None:
+    def _on_remove(self, event: RemoveEvent) -> None:
         """Cleanup Kubernetes resources"""
         # Authenticate with the Kubernetes API
         if not self._k8s_auth():
             event.defer()
             return
         # Remove created Kubernetes resources
-        r = resources.SpgwcResources(self)
-        r.delete()'''
-
+        r = resources.SpgwuResources(self)
+        r.delete()
 
 if __name__ == "__main__":
     main(SpgwuCharm)

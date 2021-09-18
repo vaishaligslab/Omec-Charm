@@ -121,6 +121,16 @@ class SpgwcCharm(CharmBase):
         s.spec.template.spec.init_containers.extend(r.add_spgwc_init_containers)
         # Add resource limit to each container
         #containers = s.spec.template.spec.containers
+        s.spec.template.spec.containers[1].resources = kubernetes.client.V1ResourceRequirements(
+                limits = {
+                    "cpu": "2",
+                    "memory": "2Gi"
+                },
+                requests = {
+                    "cpu": "2",
+                    "memory": "2Gi"
+                }
+            )
         #r.add_container_resource_limit(containers)
 
         # Patch the StatefulSet with our modified object
