@@ -69,12 +69,19 @@ class SpgwuResources:
 
     def delete(self) -> None:
         """Delete all of the Kubernetes resources created by the apply method"""
+        #Delete Kubernetes services
         for service in self._services:
             self.core_api.delete_namespaced_service(
                 namespace=service["namespace"], name=service["body"].metadata.name
             )
 
         logger.info("Deleted additional Kubernetes resources")
+
+        #Delete Kubernetes configmaps
+        for cm in self._configmaps:
+           self.core_api.delete_namespaced_config_map(
+               namespace=cm["namespace"], name=cm["body"].metadata.name
+           )
 
     @property
     def add_spgwu_init_containers(self) -> dict:
@@ -219,6 +226,7 @@ class SpgwuResources:
                         },
                     ),
                     data=dict_script,
+
                 ),
             },
            
