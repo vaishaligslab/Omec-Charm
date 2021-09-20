@@ -49,8 +49,8 @@ EAL_ARGS="${CORES} --no-huge -m ${MEMORY} --no-pci --vdev eth_af_packet0,iface=s
 
 echo "#!/bin/bash " > run.sh
 echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> run.sh
-echo "ngic_dataplane $EAL_ARGS" >> run1.sh
-chmod +x run1.sh
+echo "ngic_dataplane $EAL_ARGS" >> run.sh
+chmod +x run.sh
 
-#while true; do sleep 10000; done
-ngic_dataplane $EAL_ARGS
+while true; do sleep 10000; done
+#ngic_dataplane $EAL_ARGS

@@ -13,6 +13,10 @@ build-mme:
 build-spgwc:
 	echo "bundling spgwc charm"
 	cd charm/spgwc && charmcraft pack -v
+build-spgwu:
+	echo "bundling spgwu charm"
+	cd charm/spgwu && charmcraft pack -v
+
 
 deploy: deploy-hss deploy-mme deploy-spgwc
 

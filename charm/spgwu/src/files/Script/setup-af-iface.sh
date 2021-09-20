@@ -19,6 +19,8 @@ set -ex
 
 iptables -I OUTPUT -p icmp --icmp-type destination-unreachable -j DROP;
 
+ip a
+
 UL_IFACE="s1u-net-veth"
 DL_IFACE="sgi-net-veth"
 

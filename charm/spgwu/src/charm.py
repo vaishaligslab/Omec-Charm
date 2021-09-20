@@ -144,27 +144,13 @@ class SpgwuCharm(CharmBase):
         r = resources.SpgwuResources(self)
         # Read the StatefulSet we're deployed into
         s = api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
-        # Add ServiceName to the statefulset spec
-        #s.spec.service_name = "spgwu-headless"
         # Add the required volume mounts to the spgwu container spec
         s.spec.template.spec.init_containers.extend(r.add_spgwu_init_containers)
+
         #s.spec.template.spec.containers[1].volume_mounts.extend(r.spgwu_volume_mounts)
         s.spec.template.spec.volumes.extend(r.spgwu_volumes)
-        # Add addittonal environment variables to the container
-        s.spec.template.spec.containers[1].env.extend(r.spgwu_add_env)
-        #Assgning resource limits and request for cpu and memory for spgwu container
-        s.spec.template.spec.containers[1].resources = kubernetes.client.V1ResourceRequirements(
-            limits = {
-                "cpu": "4",
-                "memory": "8Gi"
-            },
-            requests = {
-                "cpu": "4",
-                "memory": "8Gi"
-            }
-        )
         s.spec.template.metadata.annotations = {
-            "k8s.v1.cni.cncf.io/networks": [
+            "k8s.v1.cni.cncf.io/networks": '''[
                 {
                     "name": "s1u-net",
                     "interface": "s1u-net",
@@ -175,10 +161,8 @@ class SpgwuCharm(CharmBase):
                     "interface": "sgi-net",
                     "ips": [ "13.1.1.110/24" ]
                 }
-            ],
+            ]''',
         }
-        s.spec.template.spec.containers[1].stdin = True
-        s.spec.template.spec.containers[1].tty = True
 
         # Patch the StatefulSet with our modified object
         api.patch_namespaced_stateful_set(name=self.app.name, namespace=self.namespace, body=s)
