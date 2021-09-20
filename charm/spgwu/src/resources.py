@@ -120,6 +120,22 @@ class SpgwuResources:
 #            ),
 #        ]'''
 
+    @property
+    def spgwu_add_env(self) -> dict:
+        """Returns the additional env for the spgwc containers"""
+        return [
+            kubernetes.client.V1EnvVar(
+                name = "MEM_LIMIT",
+                value_from = kubernetes.client.V1EnvVarSource(
+                    resource_field_ref = kubernetes.client.V1ResourceFieldSelector(
+                        container_name="spgwu",
+                        resource="limits.memory",
+                        divisor="1Mi",
+                    ),
+                ),
+            ),
+        ]
+
 
     @property
     def _service_accounts(self) -> list:

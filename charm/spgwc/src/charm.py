@@ -115,6 +115,8 @@ class SpgwcCharm(CharmBase):
         r = resources.SpgwcResources(self)
         # Read the StatefulSet we're deployed into
         s = api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
+        # Add ServiceName to the statefulset spec
+        #s.spec.service_name = "spgwc-headless"
         # Add the required volume mounts to the mme container spec
         s.spec.template.spec.containers[1].env.extend(r.spgwc_add_env)
         # Add additional init containers required for mme
@@ -131,8 +133,8 @@ class SpgwcCharm(CharmBase):
                     "memory": "2Gi"
                 }
             )
-        #r.add_container_resource_limit(containers)
-
+        s.spec.template.spec.containers[1].stdin = True
+        s.spec.template.spec.containers[1].tty = True
         # Patch the StatefulSet with our modified object
         api.patch_namespaced_stateful_set(name=self.app.name, namespace=self.namespace, body=s)
         logger.info("Patched StatefulSet to include additional volumes and mounts")

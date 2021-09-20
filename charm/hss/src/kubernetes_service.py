@@ -6,7 +6,7 @@
 
 from typing import List, Tuple
 
-import kubernetes
+from kubernetes import kubernetes
 
 
 class PatchFailed(RuntimeError):
