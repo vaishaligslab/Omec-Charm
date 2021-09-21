@@ -4,14 +4,6 @@
 #
 # Learn more at: https://juju.is/docs/sdk
 
-"""Charm the service.
-
-Refer to the following post for a quick-start guide that will help you
-develop a new k8s charm using the Operator Framework:
-
-    https://discourse.charmhub.io/t/4208
-"""
-
 import datetime
 import logging
 import os
@@ -30,10 +22,6 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 from ops.pebble import ConnectionError
 
 import resources
-
-scriptPath = "/opt/mme/scripts/"
-configPath = "/opt/mme/config/"
-
 
 logger = logging.getLogger(__name__)
 
@@ -100,47 +88,6 @@ class MmeCharm(CharmBase):
             return
 
         self.unit.status = ActiveStatus()
-
-    # def _push_file_to_container(self, container, srcPath, dstPath, filePermission):
-    #     for filePath in glob.glob(srcPath):
-    #         print("Loading file name:" + filePath)
-    #         fileData = resources.MmeResources(self).loadfile(filePath)
-    #         fileName = os.path.basename(filePath)
-    #         container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
-
-    # def _update_mme_and_run(self):
-    #     self.unit.status = MaintenanceStatus('Configuring mme-app')
-
-    #     # Define an initial Pebble layer configuration
-    #     pebble_layer = {
-    #         "summary": "mme-app layer",
-    #         "description": "pebble config layer for mme-app",
-    #         "services": {
-    #             "mme": {
-    #                 "override": "replace",
-    #                 "summary": "mme",
-    #                 "command": """/bin/bash -c "while true; do echo 'Running mme-app'; sleep 10; done" """,
-    #                 "startup": "enabled",
-    #                 "environment": {"thing": self.model.config["thing"]},
-    #             }
-    #         },
-    #     }
-
-    #     container = self.unit.get_container("mme")
-
-    #     self._push_file_to_container(container, "src/files/scripts/*.*", scriptPath, 0o755)
-    #     self._push_file_to_container(container, "src/files/config/*.*", configPath, 0o644)
-    #     # Add intial Pebble config layer using the Pebble API
-    #     container.add_layer("mme", pebble_layer, combine=True)
-
-    #     if container.get_service("mme").is_running():
-    #         container.stop("mme")
-    #     container.start("mme")
-
-    #     self.unit.status = ActiveStatus()
-
-    # def _on_mme_pebble_ready(self, event):
-    #     self._update_mme_and_run()
 
     def _on_fortune_action(self, event):
         """Just an example to show how to receive actions.
