@@ -41,7 +41,7 @@ deploy-spgwu:
 
 multus:
 	microk8s enable multus
-	cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
+	sudo cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
 	
 clean:
 	juju remove-application spgwu || true
