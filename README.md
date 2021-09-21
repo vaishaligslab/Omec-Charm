@@ -1,5 +1,11 @@
 # OMEC Charm
 
+Open Mobiled Evolved Core (OMEC) is opensource EPC (4G) Core
+Consisten of MME,HSS,SPGWC and SPGWU components
+
+## Enable Multus
+
+make multus
 
 ##  Build OMEC  charm
 
@@ -9,20 +15,17 @@ make build
 
 make deploy
 
-
-## Deploy only SPGWU
-
 Note : 
-1. Model needs to be development we will be removing that restriction
-2. Network defination needs to be deployed
-3.  
+- Juju Model named "development" needs to be deployed (TODO remove this dependancy)
 
-### build spgwu
+
+## Build or deploy individual components e.g. spgwu
+make build-<component-name>
+make deploy-<component-name>
+
+e.g.
 
 make build-spgwu
-
-### Run spgwu
-
 make deploy-spgwu
 
 
