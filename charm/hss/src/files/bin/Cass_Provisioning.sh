@@ -6,9 +6,9 @@ apn="apn1"
 opc="d4416644f6154936193433dd20a0ace0"
 sqn=96
 cassandra_ip="cassandra-k8s"
-mmeidentity="mme.development.svc.cluster.local"
+mmeidentity="mme.NAMESPACE.svc.cluster.local"
 no_of_users=1
-mmerealm="development.svc.cluster.local"
+mmerealm="NAMESPACE.svc.cluster.local"
 key="465b5ce8b199b49faa5f0a2ee238a6bc"
 isdn=19136246000
 id=1
@@ -28,7 +28,7 @@ echo "This script has just run another script."
 /bin/data_provisioning_mme.sh $id $isdn $mmeidentity $mmerealm $unreachability $cassandra_ip
 
 echo "done with Cassendra Provisioning"
-echo "started hhs process"
+echo "started hss process"
 
 /bin/hss-run.sh
 
