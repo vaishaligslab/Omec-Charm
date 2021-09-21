@@ -52,5 +52,5 @@ echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> run.sh
 echo "ngic_dataplane $EAL_ARGS" >> run.sh
 chmod +x run.sh
 
-while true; do sleep 10000; done
-#ngic_dataplane $EAL_ARGS
+#while true; do sleep 10000; done
+ngic_dataplane $EAL_ARGS
