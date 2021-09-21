@@ -1,7 +1,7 @@
 {"common": {
     "fdcfg": "conf/hss.conf",
-    "originhost": "hss.development.svc.cluster.local",
-    "originrealm": "development.svc.cluster.local",
+    "originhost": "hss.NAMESPACE.svc.cluster.local",
+    "originrealm": "NAMESPACE.svc.cluster.local",
     "prom_port": 9089
  },
  "hss": {
