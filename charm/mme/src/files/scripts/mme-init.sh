@@ -42,9 +42,9 @@ cp /opt/mme/config/s6a_fd.conf /opt/mme/config/shared/s6a_fd.conf
 cp /opt/mme/config/shared/* /openmme/target/conf/
 
 # Generate certs
-MME_IDENTITY="mme.development.svc.cluster.local";
+MME_IDENTITY="mme.NAMESPACE.svc.cluster.local";
 DIAMETER_HOST=$(echo $MME_IDENTITY | cut -d'.' -f1)
-DIAMETER_REALM="development.svc.cluster.local";
+DIAMETER_REALM="NAMESPACE.svc.cluster.local";
 
 cp /openmme/target/conf/make_certs.sh /opt/mme/config/shared/make_certs.sh
 cd /opt/mme/config/shared

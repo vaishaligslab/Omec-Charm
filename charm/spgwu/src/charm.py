@@ -63,8 +63,6 @@ class SpgwuCharm(CharmBase):
 
         Learn more about Pebble layers at https://github.com/canonical/pebble
         """
-        # Get a reference the container attribute on the PebbleReadyEvent
-        container = event.workload
         # Define an initial Pebble layer configuration
         pebble_layer = {
             "summary": "spgwu layer",
@@ -89,8 +87,10 @@ class SpgwuCharm(CharmBase):
         self._push_file_to_container(container, "src/files/Config/*.*", configPath, 0o755)
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("spgwu", pebble_layer, combine=True)
-        # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        # Check if the mme service is already running and start it if not
+        if not container.get_service("spgwu").is_running():
+            container.start("spgwu")
+            logger.info("spgwu service started")
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
@@ -146,7 +146,22 @@ class SpgwuCharm(CharmBase):
         s = api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
         # Add the required volume mounts to the spgwu container spec
         s.spec.template.spec.init_containers.extend(r.add_spgwu_init_containers)
+        # Add addittonal environment variables to the container
+        s.spec.template.spec.containers[1].env.extend(r.spgwu_add_env)
+        #Assgning resource limits and request for cpu and memory for spgwu container
+        s.spec.template.spec.containers[1].resources = kubernetes.client.V1ResourceRequirements(
+                limits = {
+                    "cpu": "4",
+                    "memory": "8Gi"
+                },
+                requests = {
+                    "cpu": "4",
+                    "memory": "8Gi"
+                }
+            )
 
+        s.spec.template.spec.containers[1].stdin = True
+        s.spec.template.spec.containers[1].tty = True
         #s.spec.template.spec.containers[1].volume_mounts.extend(r.spgwu_volume_mounts)
         s.spec.template.spec.volumes.extend(r.spgwu_volumes)
         s.spec.template.metadata.annotations = {

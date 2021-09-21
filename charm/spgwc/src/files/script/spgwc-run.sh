@@ -19,12 +19,12 @@ mkdir -p /opt/cp/config
 cd /opt/cp/config
 cp /etc/cp/config/{adc_rules.cfg,cp.cfg,log.json,meter_profile.cfg,pcc_rules.cfg,sdf_rules.cfg,rules_ipv4.cfg,rules_ipv6.cfg,static_arp.cfg} .
 
-#UPF_IP=$(curl -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"   https://kubernetes.default.svc:443/api/v1/namespaces/{default}/endpoints/spgwu-dp-comm | jq -r '.subsets[].addresses[].ip')
+UPF_IP=$(curl -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"   https://kubernetes.default.svc:443/api/v1/namespaces/{NAMESPACE}/endpoints/spgwu-dp-comm | jq -r '.subsets[].addresses[].ip')
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
-#sed -i "s/CP_ADDR/$POD_IP/g" cp.cfg
-#sed -i "s/DP_ADDR/$UPF_IP/g" cp.cfg
+sed -i "s/CP_ADDR/$POD_IP/g" cp.cfg
+sed -i "s/DP_ADDR/$UPF_IP/g" cp.cfg
 
 APP_PATH="./build"
 APP="ngic_controlplane"
@@ -49,7 +49,7 @@ echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" > run.sh
 echo "ngic_controlplane $ARGS" >> run.sh
 chmod +x run.sh
 
-while true; do sleep 10000; done
+#while true; do sleep 10000; done
 
-#ngic_controlplane $ARGS
+ngic_controlplane $ARGS
 
