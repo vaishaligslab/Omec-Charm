@@ -41,7 +41,7 @@ deploy-spgwu:
 
 multus:
 	microk8s enable multus
-	cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
+	sudo cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
 
 set-nodeport-range:
 	sed -r '/^--service-node-port-range=.*$$/d' -i  /var/snap/microk8s/current/args/kube-apiserver && sed -r '1 i\--service-node-port-range=2000-36767' -i  /var/snap/microk8s/current/args/kube-apiserver

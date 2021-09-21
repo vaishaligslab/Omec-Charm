@@ -14,7 +14,9 @@ cp /etc/hss/conf/{acl.conf,hss.json,hss.conf,oss.json} $CONF_DIR
 cat $CONF_DIR/{hss.json,hss.conf}
 
 cd $CONF_DIR
-make_certs.sh hss development.svc.cluster.local
+make_certs.sh hss NAMESPACE.svc.cluster.local
+
+#namespace changes
 
 cd ..
 hss -j $CONF_DIR/hss.json
