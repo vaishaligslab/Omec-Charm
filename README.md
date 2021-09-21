@@ -9,6 +9,12 @@ Consisten of MME,HSS,SPGWC and SPGWU components
 make multus
 ```
 
+## Change NodePort range
+
+```
+make set-nodeport-range
+```
+
 ##  Build OMEC  charm
 ```
 make build
