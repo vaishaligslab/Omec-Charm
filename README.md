@@ -33,7 +33,7 @@ make deploy-spgwu
 
 ## Cleanup omec applications
 ```
-make cleanup
+make clean
 ```
 
 
