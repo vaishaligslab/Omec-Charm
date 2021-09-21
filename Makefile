@@ -2,7 +2,7 @@ SHELL = bash -o pipefail
 
 .PHONY: build
 
-build: build-hss build-mme build-spgwc
+build: build-hss build-mme build-spgwc build-spgwu
 
 build-hss:
 	echo "bundling hss charm"
@@ -13,26 +13,42 @@ build-mme:
 build-spgwc:
 	echo "bundling spgwc charm"
 	cd charm/spgwc && charmcraft pack -v
+build-spgwu:
+	echo "bundling spgwu charm"
+	cd charm/spgwu && charmcraft pack -v
 
-deploy: deploy-hss deploy-mme deploy-spgwc
+
+deploy: deploy-deps deploy-spgwu deploy-hss deploy-mme deploy-spgwc
+
+deploy-deps:
+	juju add-model development || true
 
 deploy-hss:
-	juju add-model development
 	juju deploy cassandra-k8s
 	echo "deploying hss charm"
-	cd charm/hss && juju deploy ./hss_ubuntu-20.04-amd64.charm --resource hss-image=vaishalinicky/cqlshimage:v5 
+	cd charm/hss && juju deploy ./hss_ubuntu-20.04-amd64.charm --resource hss-image=vaishalinicky/cqlshimage:v5  --debug
 deploy-mme:
 	echo "deploying mme charm"
-	cd charm/mme && juju deploy ./mme_ubuntu-20.04-amd64.charm --resource mme-image=amitinfo2k/nucleus-mme:9f86f87
+	cd charm/mme && juju deploy ./mme_ubuntu-20.04-amd64.charm --resource mme-image=amitinfo2k/nucleus-mme:9f86f87 --debug
 deploy-spgwc:
 	echo "deploying spgwc charm"
-	cd charm/spgwc && juju deploy juju deploy ./spgwc_ubuntu-20.04-amd64.charm --resource spgwc-image=amitinfo2k/ngic-cp:1.9.0
+	cd charm/spgwc && juju deploy ./spgwc_ubuntu-20.04-amd64.charm --resource spgwc-image=amitinfo2k/ngic-cp:1.9.0 --debug
+deploy-spgwu:
+	echo "deploying net-attach-def "
+	cd scripts && ./install_dep.sh || true
+	echo "deploying dp charm"
+	cd charm/spgwu && juju deploy ./spgwu_ubuntu-20.04-amd64.charm --resource spgwu-image=amitinfo2k/ngic-dp:1.9.0 --debug
 
-cleanup:
-	juju remove-application spgwc
-	juju remove-application mme
-	juju remove-application hss
-	juju remove-application cassandra-k8s
+multus:
+	microk8s enable multus
+	sudo cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
+	
+clean:
+	juju remove-application spgwu || true
+	juju remove-application spgwc || true
+	juju remove-application mme || true
+	juju remove-application hss || true
+	juju remove-application cassandra-k8s || true
 	juju destroy-model development --destroy-storage -y
 
 

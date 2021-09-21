@@ -93,10 +93,9 @@ class SpgwuResources:
                 image = "docker.io/omecproject/pod-init:1.0.0",
                 image_pull_policy = "IfNotPresent",
                 security_context = kubernetes.client.V1SecurityContext(
-                    capabilities=kubernetes.client.V1Capabilities(add=["NET_ADMIN"])
-    
+                    capabilities=kubernetes.client.V1Capabilities(add=["IPC_LOCK", "NET_ADMIN"])
                 ),
-                 volume_mounts = [
+                volume_mounts = [
                     kubernetes.client.V1VolumeMount(
                         mount_path = "/opt/dp/scripts/setup-af-iface.sh",
                         sub_path = "setup-af-iface.sh",
