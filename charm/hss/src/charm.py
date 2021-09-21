@@ -56,8 +56,6 @@ class HssCharm(CharmBase):
 
         Learn more about Pebble layers at https://github.com/canonical/pebble
         """
-        # Get a reference the container attribute on the PebbleReadyEvent
-        container = event.workload
         # Define an initial Pebble layer configuration
         pebble_layer = {
             "summary": "hss layer",
@@ -81,8 +79,9 @@ class HssCharm(CharmBase):
 
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("hss", pebble_layer, combine=True)
-        # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        if not container.get_service("hss").is_running():
+            container.start("hss")
+            logger.info("hss service started")
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()

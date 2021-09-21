@@ -4,13 +4,6 @@
 #
 # Learn more at: https://juju.is/docs/sdk
 
-"""Charm the service.
-
-Refer to the following post for a quick-start guide that will help you
-develop a new k8s charm using the Operator Framework:
-
-    https://discourse.charmhub.io/t/4208
-"""
 from files import *
 import logging
 import os
@@ -69,8 +62,9 @@ class SpgwcCharm(CharmBase):
 
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("spgwc", pebble_layer, combine=True)
-        # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        if not container.get_service("spgwc").is_running():
+            container.start("spgwc")
+            logger.info("spgwc service started")
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
@@ -122,7 +116,6 @@ class SpgwcCharm(CharmBase):
         # Add additional init containers required for mme
         s.spec.template.spec.init_containers.extend(r.add_spgwc_init_containers)
         # Add resource limit to each container
-        #containers = s.spec.template.spec.containers
         s.spec.template.spec.containers[1].resources = kubernetes.client.V1ResourceRequirements(
                 limits = {
                     "cpu": "2",
@@ -159,24 +152,11 @@ class SpgwcCharm(CharmBase):
     def _push_file_to_container(self, container, srcPath, dstPath, filePermission):
         for filePath in glob.glob(srcPath):
             print("Loading file name:" + filePath)
-            fileData = loadfile(filePath)
+            fileData = resources.SpgwcResources(self).loadfile(filePath)
             fileName = os.path.basename(filePath)
             container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
-
-    '''def _patch_k8s_service(self):
-        """Fix the Kubernetes service that was setup by Juju with correct port numbers."""
-        if self.unit.is_leader():
-            service_ports = [
-                (f"s6a", self._s6a_port, self._s6a_port),
-                (f"config-port", self._config_port, self._config_port),
-                (f"prometheus-exporter", self._prometheus_port, self._prometheus_port),
-            ]
-            try:
-                K8sServicePatch.set_ports(self.app.name, service_ports)
-            except PatchFailed as e:
-                logger.error("Unable to patch the Kubernetes service: %s", str(e))
-            else:
-                logger.info("Successfully patched the Kubernetes service")'''
+   
+   
     def _k8s_auth(self) -> bool:
         """Authenticate to kubernetes."""
         if self._authed:
@@ -236,24 +216,6 @@ class SpgwcCharm(CharmBase):
         # Remove created Kubernetes resources
         r = resources.SpgwcResources(self)
         r.delete()
-
-
-    '''def _on_upgrade_charm(self, _):
-        """Event handler for replica's UpgradeCharmEvent."""
-        # Ensure that older deployments of Alertmanager run the logic to patch the K8s service
-        self._patch_k8s_service()
-
-       # update config hash
-        self._stored.config_hash = (
-            ""
-            if not self.container.can_connect()
-            else sha256(yaml.safe_dump(yaml.safe_load(self.container.pull(self._config_path))))
-        )
-
-        # After upgrade (refresh), the unit ip address is not guaranteed to remain the same, and
-        # the config may need update. Calling the common hook to update.
-        self._common_exit_hook()'''
-
 
 
 if __name__ == "__main__":

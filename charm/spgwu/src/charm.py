@@ -63,8 +63,6 @@ class SpgwuCharm(CharmBase):
 
         Learn more about Pebble layers at https://github.com/canonical/pebble
         """
-        # Get a reference the container attribute on the PebbleReadyEvent
-        container = event.workload
         # Define an initial Pebble layer configuration
         pebble_layer = {
             "summary": "spgwu layer",
@@ -89,8 +87,10 @@ class SpgwuCharm(CharmBase):
         self._push_file_to_container(container, "src/files/Config/*.*", configPath, 0o755)
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("spgwu", pebble_layer, combine=True)
-        # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        # Check if the mme service is already running and start it if not
+        if not container.get_service("spgwu").is_running():
+            container.start("spgwu")
+            logger.info("spgwu service started")
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
