@@ -35,7 +35,7 @@ deploy-spgwc:
 	cd charm/spgwc && juju deploy ./spgwc_ubuntu-20.04-amd64.charm --resource spgwc-image=amitinfo2k/ngic-cp:1.9.0 --debug
 deploy-spgwu:
 	echo "deploying net-attach-def "
-	cd scripts && ./install_dep.sh || true
+	cd script && ./install_dep.sh || true
 	echo "deploying dp charm"
 	cd charm/spgwu && juju deploy ./spgwu_ubuntu-20.04-amd64.charm --resource spgwu-image=amitinfo2k/ngic-dp:1.9.0 --debug
 
