@@ -18,10 +18,12 @@ build-spgwu:
 	cd charm/spgwu && charmcraft pack -v
 
 
-deploy: deploy-spgwu deploy-hss deploy-mme deploy-spgwc
+deploy: deploy-deps deploy-spgwu deploy-hss deploy-mme deploy-spgwc
+
+deploy-deps:
+	juju add-model development || true
 
 deploy-hss:
-	juju add-model development
 	juju deploy cassandra-k8s
 	echo "deploying hss charm"
 	cd charm/hss && juju deploy ./hss_ubuntu-20.04-amd64.charm --resource hss-image=vaishalinicky/cqlshimage:v5  --debug
