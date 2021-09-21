@@ -16,5 +16,7 @@ cat $CONF_DIR/{hss.json,hss.conf}
 cd $CONF_DIR
 make_certs.sh hss NAMESPACE.svc.cluster.local
 
+#namespace changes
+
 cd ..
 hss -j $CONF_DIR/hss.json

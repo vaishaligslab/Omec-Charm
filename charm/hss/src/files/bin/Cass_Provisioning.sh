@@ -28,7 +28,7 @@ echo "This script has just run another script."
 /bin/data_provisioning_mme.sh $id $isdn $mmeidentity $mmerealm $unreachability $cassandra_ip
 
 echo "done with Cassendra Provisioning"
-echo "started hss process"
+echo "started hhs process"
 
 /bin/hss-run.sh
 
