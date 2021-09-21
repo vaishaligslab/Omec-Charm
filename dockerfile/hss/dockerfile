@@ -1,0 +1,8 @@
+FROM amitinfo2k/c3po-hss:master-deaea91
+RUN apt-get update && apt-get install -y wget python
+RUN wget https://downloads.datastax.com/enterprise/cqlsh-astra.tar.gz
+RUN tar -xzvf cqlsh-astra.tar.gz
+WORKDIR /
+ENV PATH="/cqlsh-astra/bin/::${PATH}"
+CMD ["/bin/bash"]
+
