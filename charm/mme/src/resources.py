@@ -500,6 +500,29 @@ class MmeResources:
                     ),
                 ),
             },
+            {
+                "namespace": self.namespace,
+                "body": kubernetes.client.V1Service(
+                    api_version="v1",
+                    metadata=kubernetes.client.V1ObjectMeta(
+                        namespace=self.namespace,
+                        name="mme-external",
+                        labels={"app.kubernetes.io/name": self.app.name},
+                    ),
+                    spec=kubernetes.client.V1ServiceSpec(
+                        ports=[
+                            kubernetes.client.V1ServicePort(
+                                name="s1ap",
+                                port=36412,
+                                protocol="SCTP",
+                                node_port=36412,
+                            ),
+                        ],
+                        selector={"app.kubernetes.io/name": self.app.name},
+                        type="NodePort",
+                    ),
+                ),
+            },
         ]
 
     def loadfile(self, file_name):

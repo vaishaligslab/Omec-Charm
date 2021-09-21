@@ -1,0 +1,30 @@
+---
+# Source: omec-data-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: s1u-net
+spec:
+  config: '{
+    "cniVersion": "0.2.0",
+    "type": "simpleovs",
+    "ipam": {
+        "type": "static"
+    }
+  }'
+
+---
+# Source: omec-data-plane/templates/networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: sgi-net
+spec:
+  config: '{
+    "cniVersion": "0.2.0",
+    "type": "simpleovs",
+    "ipam": {
+        "type": "static"
+    }
+  }'
+
