@@ -21,7 +21,7 @@ build-spgwu:
 deploy: deploy-deps deploy-spgwu deploy-hss deploy-mme deploy-spgwc
 
 deploy-deps:
-	juju add-model development || true
+	juju add-model omec || true
 
 deploy-hss:
 	juju deploy cassandra-k8s
@@ -35,13 +35,18 @@ deploy-spgwc:
 	cd charm/spgwc && juju deploy ./spgwc_ubuntu-20.04-amd64.charm --resource spgwc-image=amitinfo2k/ngic-cp:1.9.0 --debug
 deploy-spgwu:
 	echo "deploying net-attach-def "
-	cd scripts && ./install_dep.sh || true
+	cd script && ./install_dep.sh || true
 	echo "deploying dp charm"
 	cd charm/spgwu && juju deploy ./spgwu_ubuntu-20.04-amd64.charm --resource spgwu-image=amitinfo2k/ngic-dp:1.9.0 --debug
 
 multus:
 	microk8s enable multus
 	sudo cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
+
+set-nodeport-range:
+	sed -r '/^--service-node-port-range=.*$$/d' -i  /var/snap/microk8s/current/args/kube-apiserver && sed -r '1 i\--service-node-port-range=2000-36767' -i  /var/snap/microk8s/current/args/kube-apiserver
+	microk8s stop
+	microk8s start
 	
 clean:
 	juju remove-application spgwu || true
