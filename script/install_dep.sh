@@ -1,4 +1,4 @@
 #!/bin/bash
 
-kubectl create -n development -f ovs-network.yaml
+kubectl create -n omec -f ovs-network.yaml
 
