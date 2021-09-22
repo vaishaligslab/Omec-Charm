@@ -32,7 +32,7 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 import resources
 from pathlib import Path
-from files import *
+#from files import *
 
 logger = logging.getLogger(__name__)
 
@@ -112,11 +112,11 @@ class SpgwuCharm(CharmBase):
 
         # Default StatefulSet needs patching for extra volume mounts. Ensure that
         # the StatefulSet is patched on each invocation.
-    #if not self._statefulset_patched:"""
-        self._patch_stateful_set()
-        self.unit.status = MaintenanceStatus("waiting for changes to apply")
+       if not self._statefulset_patched:
+         self._patch_stateful_set()
+         self.unit.status = MaintenanceStatus("waiting for changes to apply")
 
-        self.unit.status = ActiveStatus()
+         self.unit.status = ActiveStatus()
 
 
     def _on_fortune_action(self, event):
@@ -237,7 +237,7 @@ class SpgwuCharm(CharmBase):
     def _push_file_to_container(self, container, srcPath, dstPath, filePermission):
         for filePath in glob.glob(srcPath):
             print("Loading file name:" + filePath)
-            fileData = loadfile(filePath)
+            fileData = resources.SpgwuResources(self).loadfile(filePath)
             fileName = os.path.basename(filePath)
             container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
 
