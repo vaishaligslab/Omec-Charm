@@ -54,6 +54,6 @@ clean:
 	juju remove-application mme || true
 	juju remove-application hss || true
 	juju remove-application cassandra-k8s || true
-	juju destroy-model development --destroy-storage -y
+	juju destroy-model omec --destroy-storage -y
 
 
