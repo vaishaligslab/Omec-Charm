@@ -161,7 +161,7 @@ class MmeResources:
                 ],
                 env = [
                     kubernetes.client.V1EnvVar(
-                        name = "NAMESPACE",
+                        name = "Namespace",
                         value_from = kubernetes.client.V1EnvVarSource(
                             field_ref = kubernetes.client.V1ObjectFieldSelector(
                                 field_path = "metadata.namespace",
