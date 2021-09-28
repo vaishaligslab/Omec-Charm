@@ -26,18 +26,18 @@ deploy-deps:
 deploy-hss:
 	juju deploy cassandra-k8s
 	echo "deploying hss charm"
-	cd charm/hss && juju deploy ./hss_ubuntu-20.04-amd64.charm --resource hss-image=vaishalinicky/cqlshimage:v5  --debug
+	cd charm/hss && juju deploy ./hss_ubuntu-20.04-amd64.charm --trust --resource hss-image=vaishalinicky/cqlshimage:v5  --debug
 deploy-mme:
 	echo "deploying mme charm"
-	cd charm/mme && juju deploy ./mme_ubuntu-20.04-amd64.charm --resource mme-image=amitinfo2k/nucleus-mme:9f86f87 --debug
+	cd charm/mme && juju deploy ./mme_ubuntu-20.04-amd64.charm --trust --resource mme-image=amitinfo2k/nucleus-mme:9f86f87 --debug
 deploy-spgwc:
 	echo "deploying spgwc charm"
-	cd charm/spgwc && juju deploy ./spgwc_ubuntu-20.04-amd64.charm --resource spgwc-image=amitinfo2k/ngic-cp:1.9.0 --debug
+	cd charm/spgwc && juju deploy ./spgwc_ubuntu-20.04-amd64.charm --trust --resource spgwc-image=amitinfo2k/ngic-cp:1.9.0 --debug
 deploy-spgwu:
 	echo "deploying net-attach-def "
 	cd script && ./install_dep.sh || true
 	echo "deploying dp charm"
-	cd charm/spgwu && juju deploy ./spgwu_ubuntu-20.04-amd64.charm --resource spgwu-image=amitinfo2k/ngic-dp:1.9.0 --debug
+	cd charm/spgwu && juju deploy ./spgwu_ubuntu-20.04-amd64.charm --trust --resource spgwu-image=amitinfo2k/ngic-dp:1.9.0 --debug
 
 multus:
 	microk8s enable multus

@@ -47,7 +47,6 @@ class SpgwuCharm(CharmBase):
         super().__init__(*args)
         self.framework.observe(self.on.spgwu_pebble_ready, self._on_spgwu_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.fortune_action, self._on_fortune_action)
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.remove, self._on_remove)
 
@@ -112,29 +111,31 @@ class SpgwuCharm(CharmBase):
 
         # Default StatefulSet needs patching for extra volume mounts. Ensure that
         # the StatefulSet is patched on each invocation.
-       if not self._statefulset_patched:
-         self._patch_stateful_set()
-         self.unit.status = MaintenanceStatus("waiting for changes to apply")
+        if not self._statefulset_patched:
+            self.unit.status = MaintenanceStatus("waiting for changes to apply")
+            self._patch_stateful_set()
 
-         self.unit.status = ActiveStatus()
+            self.unit.status = ActiveStatus()
 
-
-    def _on_fortune_action(self, event):
-        """Just an example to show how to receive actions.
-
-        TEMPLATE-TODO: change this example to suit your needs.
-        If you don't need to handle actions, you can remove this method,
-        the hook created in __init__.py for it, the corresponding test,
-        and the actions.py file.
-
-        Learn more about actions at https://juju.is/docs/sdk/actions
-        """
-        fail = event.params["fail"]
-        if fail:
-            event.fail(fail)
-        else:
-            event.set_results({"fortune": "A bug in the code is worth two in the documentation."})
-
+    @property
+    def _statefulset_patched(self) -> bool:
+        """Slightly naive check to see if the StatefulSet has already been patched"""
+        # Get an API client
+        apps_api = kubernetes.client.AppsV1Api(kubernetes.client.ApiClient())
+        # Get the StatefulSet for the deployed application
+        s = apps_api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
+        # Create a volume mount that we expect to be present after patching the StatefulSet
+        expected = kubernetes.client.V1EnvVar(
+                name = "MEM_LIMIT",
+                value_from = kubernetes.client.V1EnvVarSource(
+                    resource_field_ref = kubernetes.client.V1ResourceFieldSelector(
+                        container_name="spgwu",
+                        resource="limits.memory",
+                        divisor="1Mi",
+                    ),
+                ),
+            )
+        return expected in s.spec.template.spec.containers[1].env
 
     def _patch_stateful_set(self) -> None:
         """Patch the StatefulSet to include specific ServiceAccount and Secret mounts"""
@@ -159,6 +160,9 @@ class SpgwuCharm(CharmBase):
                     "memory": "8Gi"
                 }
             )
+        s.spec.template.spec.containers[1].security_context = kubernetes.client.V1SecurityContext(
+                capabilities=kubernetes.client.V1Capabilities(add=["IPC_LOCK", "NET_ADMIN"])
+        )
 
         s.spec.template.spec.containers[1].stdin = True
         s.spec.template.spec.containers[1].tty = True
