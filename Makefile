@@ -25,21 +25,6 @@ os_release	:= $(shell lsb_release -r -s)
 
 deploy_omec: $(M)/system-check $(M)/deploy_omec
 
-build: build-hss build-mme build-spgwc build-spgwu
-
-build-hss:
-	echo "bundling hss charm"
-	cd charm/hss && charmcraft pack -v
-build-mme:
-	echo "bundling mme charm"
-	cd charm/mme && charmcraft pack -v
-build-spgwc:
-	echo "bundling spgwc charm"
-	cd charm/spgwc && charmcraft pack -v
-build-spgwu:
-	echo "bundling spgwu charm"
-	cd charm/spgwu && charmcraft pack -v
-
 $(M):
 	mkdir -p $(M)
 
@@ -132,6 +117,7 @@ $(M)/install_k3s: | $(M)/install_docker $(M)/install_helm
 	kubectl create -f script/calico-tigera-operator.yaml; \
 	kubectl create -f script/calico-custom-resources.yaml; \
 	kubectl create -f script/multus-daemonset.yml
+	sudo cp net-plugins/* /opt/cni/bin/
 	touch $@
 
 # UE images includes kernel module, ue_ip.ko
@@ -165,11 +151,27 @@ $(M)/oaisim: | $(M)/ue-image $(M)/deploy_omec
 
 
 $(M)/omec: | $(M)/install /opt/cni/bin/simpleovs /opt/cni/bin/static $(M)/fabric
-$(M)/deploy_omec: | $(M)/install
+$(M)/deploy_omec: | $(M)/install $(M)/build
+	juju add-model $(MODEL_NAME)
+	echo "deploying net-attach-def "
+	cd script && ./install_dep.sh || true
 	juju deploy ./bundle.yaml --trust
 
-deploy-deps:
-	juju add-model omec || true
+$(M)/build: | build-hss build-mme build-spgwc build-spgwu
+	touch $@
+
+build-hss:
+	echo "bundling hss charm"
+	cd charm/hss && charmcraft pack -v
+build-mme:
+	echo "bundling mme charm"
+	cd charm/mme && charmcraft pack -v
+build-spgwc:
+	echo "bundling spgwc charm"
+	cd charm/spgwc && charmcraft pack -v
+build-spgwu:
+	echo "bundling spgwu charm"
+	cd charm/spgwu && charmcraft pack -v
 
 deploy-hss:
 	juju deploy cassandra-k8s
@@ -189,7 +191,6 @@ deploy-spgwu:
 
 multus:
 	microk8s enable multus
-	sudo cp net-plugins/* /var/snap/microk8s/current/opt/cni/bin/
 
 set-nodeport-range:
 	sed -r '/^--service-node-port-range=.*$$/d' -i  /var/snap/microk8s/current/args/kube-apiserver && sed -r '1 i\--service-node-port-range=2000-36767' -i  /var/snap/microk8s/current/args/kube-apiserver
