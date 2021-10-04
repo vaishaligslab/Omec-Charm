@@ -1,0 +1,78 @@
+images:
+  tags:
+    enb: omecproject/lte-softmodem:1.1.0
+    ue: amitinfo2k/lte-uesoftmodem:1.1.0
+    nginx: amitinfo2k/cdn-nginx:1.0.0
+  pullPolicy: IfNotPresent
+config:
+  enb:
+    mme:
+      address: 127.0.0.1
+    networks:
+      s1u:
+        interface: s1u-enb
+  plmn:
+    mcc: "208"
+    mnc: "01"
+    mnc_length: 2
+  ues:
+   - msin: "4567891201"
+     api_key: "465b5ce8b199b49faa5f0a2ee238a6bc"
+     opc: "d4416644f6154936193433dd20a0ace0"
+     msisdn: "1122334456"
+     sqn: "96"
+  cdnRemotes:
+  - name: remote-1
+    ip: 10.73.73.71 # One of the central cluster node IP address
+    port: 30935
+    streams: # Video streams from CDN-Remote
+    - name: 360p
+      value: 360
+    - name: 480p
+      value: 480
+  sriov:
+    enabled: false # If you want to use Host Network, please unset this flag.
+  nginx:
+    sgi:
+      device: sgi-cdn
+      ip: 13.1.1.253/24
+  spgwu:
+    sgi:
+      ip: 13.1.1.110/24
+  spgwc:
+    ueIpPool:
+      ip: 16.0.0.0
+      mask: 255.0.0.0
+
+
+resources:
+  enabled: true
+  videoArchive:
+    requests:
+      cpu: 1
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  antMedia:
+    requests:
+      cpu: 1
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  nginx:
+    requests:
+      cpu: .2
+      memory: 1Gi
+    limits:
+      cpu: .2
+      memory: 1Gi
+
+networks:
+  cniPlugin: simpleovs # which means netdevice
+  ipam: static
+  sgi:
+    subnet: 13.1.1.0/24
+    mask: 255.255.255.0
+    gateway: 13.1.1.254

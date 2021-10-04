@@ -3,6 +3,8 @@ BUILD		?= /tmp/build
 MAKEDIR		:= $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 SCRIPTDIR	:= $(MAKEDIR)/script
 M		?= $(BUILD)/milestones
+AIABVALUES	?= $(MAKEDIR)/omec.yaml
+RESOURCEDIR	:= $(MAKEDIR)/resources
 
 DOCKER_VERSION	?= 19.03.15
 HELM_VERSION	?= v3.5.4
@@ -94,39 +96,32 @@ $(M)/install: | $(M)/charmcraft $(M)/lxd $(M)/install_k3s $(M)/juju
 # Install Docker CE
 ## Set up the repository:
 ### Install packages to allow apt to use a repository over HTTPS
-$(M)/install_docker:
-	sudo apt-get update
-	sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common jq socat curl
-	curl https://releases.rancher.com/install-docker/19.03.sh | sh
+$(M)/install_docker_helm:
+	sudo ./script/install_docker_helm.sh
 	sudo usermod -aG docker $$USER
 	touch $@
+	echo "Run newgrp docker and rerun make cmd"
+	exit 0
 
-$(M)/install_helm:
-	wget https://get.helm.sh/helm-$(HELM_VERSION)-linux-amd64.tar.gz
-	tar -xzvf helm-$(HELM_VERSION)-linux-amd64.tar.gz
-	sudo mv linux-amd64/helm /usr/local/bin/
-	sudo rm -rf linux-amd64 helm-$(HELM_VERSION)-linux-amd64.tar.gz
-	touch $@
-
-$(M)/install_k3s: | $(M)/install_docker $(M)/install_helm
-	curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=${K3S_VERSION} INSTALL_K3S_EXEC="--write-kubeconfig-mode=600 --flannel-backend=none --disable-network-policy --disable=traefik --cluster-cidr=10.42.0.0/16 --kube-apiserver-arg service-node-port-range=2000-36767" sh -s - --docker
+$(M)/install_k3s: | $(M)/install_docker_helm
+	curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$(K3S_VERSION) INSTALL_K3S_EXEC="--write-kubeconfig-mode=600 --flannel-backend=none --disable-network-policy --disable=traefik --cluster-cidr=10.42.0.0/16 --kube-apiserver-arg service-node-port-range=2000-36767" sh -s - --docker
 	mkdir -p $(HOME)/.kube
 	sudo cp -f /etc/rancher/k3s/k3s.yaml $(HOME)/.kube/config
 	sudo chown $(shell id -u):$(shell id -g) $(HOME)/.kube/config
 	export KUBECONFIG=$(HOME)/.kube/config; \
-	kubectl create -f script/calico-tigera-operator.yaml; \
-	kubectl create -f script/calico-custom-resources.yaml; \
-	kubectl create -f script/multus-daemonset.yml
-	sudo cp net-plugins/* /opt/cni/bin/
+	kubectl apply -f $(RESOURCEDIR)/calico-tigera-operator.yaml; \
+	kubectl apply -f $(RESOURCEDIR)/calico-custom-resources.yaml; \
+	kubectl apply -f $(RESOURCEDIR)/multus-daemonset.yml
+	kubectl wait pod -n kube-system --for=condition=Ready --all
 	touch $@
 
 # UE images includes kernel module, ue_ip.ko
 # which should be built in the exactly same kernel version of the host machine
-$(BUILD)/openairinterface: | $(M)/setup
+$(BUILD)/openairinterface: | $(M)/install_docker_helm
 	mkdir -p $(BUILD)
 	cd $(BUILD); git clone https://github.com/opencord/openairinterface.git
 
-$(M)/ue-image: | $(M)/k8s-ready $(BUILD)/openairinterface
+$(M)/ue-image: | $(M)/install_k3s $(BUILD)/openairinterface
 	cd $(BUILD)/openairinterface; \
 	sudo docker build . --target lte-uesoftmodem \
 		--build-arg build_base=omecproject/oai-base:1.1.0 \
@@ -137,7 +132,7 @@ $(M)/ue-image: | $(M)/k8s-ready $(BUILD)/openairinterface
 $(M)/oaisim: | $(M)/ue-image $(M)/deploy_omec
 	sudo ip addr add 127.0.0.2/8 dev lo || true
 	$(eval mme_iface=$(shell ip -4 route list default | awk -F 'dev' '{ print $$2; exit }' | awk '{ print $$1 }'))
-	helm upgrade --install --namespace $(MODEL_NAME) oaisim cord/oaisim -f $(AIABVALUES) \
+	helm upgrade --install --namespace $(MODEL_NAME) oaisim helm-charts/oaisim -f $(AIABVALUES) \
 		--set config.enb.networks.s1_mme.interface=$(mme_iface) \
 		--set images.pullPolicy=IfNotPresent
 	kubectl rollout status -n omec statefulset ue
@@ -150,14 +145,38 @@ $(M)/oaisim: | $(M)/ue-image $(M)/deploy_omec
 	touch $@
 
 
-$(M)/omec: | $(M)/install /opt/cni/bin/simpleovs /opt/cni/bin/static $(M)/fabric
-$(M)/deploy_omec: | $(M)/install $(M)/build
+/opt/cni/bin: | $(M)/install_k3s
+	echo "Copy cni plugins"
+	sudo cp $(RESOURCEDIR)/net-plugins/* /opt/cni/bin/
+	sudo chmod +x /opt/cni/bin/*
+	touch $@
+
+# TODO: need to connect ONOS
+$(M)/fabric: | $(M)/install_k3s /opt/cni/bin
+	sudo apt install -y openvswitch-switch
+	sudo ovs-vsctl --may-exist add-br br-s1u-net
+	sudo ovs-vsctl --may-exist add-port br-s1u-net s1u-enb -- set Interface s1u-enb type=internal
+	sudo ip addr add 11.1.1.111/24 dev s1u-enb  || true
+	sudo ip link set s1u-enb up
+	kubectl apply -f $(RESOURCEDIR)/router.yaml
+	kubectl wait pod -n default --for=condition=Ready -l app=router --timeout=300s
+	kubectl -n default exec router ip route add 16.0.0.0/8 via 13.1.1.110 || true
+	kubectl delete net-attach-def sgi-net
+	touch $@
+
+
+$(M)/deploy_omec: | $(M)/install /opt/cni/bin $(M)/fabric $(M)/build_omec
+	echo "Adding Model $(MODEL_NAME)"
 	juju add-model $(MODEL_NAME)
 	echo "deploying net-attach-def "
-	cd script && ./install_dep.sh || true
+	kubectl apply -f $(RESOURCEDIR)/ovs-network.yaml --namespace $(MODEL_NAME) || true
+	helm repo add incubator https://charts.helm.sh/incubator
+	helm install cassandra incubator/cassandra --version "0.13.1" --values $(RESOURCEDIR)/cassandra_values.yaml -n $(MODEL_NAME)
 	juju deploy ./bundle.yaml --trust
+	kubectl wait pod -n $(MODEL_NAME) --for=condition=Ready -l app.kubernetes.io/name=spgwc --timeout=300s
 
-$(M)/build: | build-hss build-mme build-spgwc build-spgwu
+$(M)/build_omec: | build-hss build-mme build-spgwc build-spgwu
+	echo "Omec chart build done"
 	touch $@
 
 build-hss:
@@ -197,11 +216,13 @@ set-nodeport-range:
 	microk8s stop
 	microk8s start
 	
-clean:
+reset-omec:
 	juju remove-application spgwu || true
 	juju remove-application spgwc || true
 	juju remove-application mme || true
 	juju remove-application hss || true
-	juju remove-application cassandra-k8s || true
-	juju destroy-model omec --destroy-storage -y
+	#juju remove-application cassandra-k8s || true
+	helm del cassandra -n $(MODEL_NAME) || true
+	juju destroy-model $(MODEL_NAME) --destroy-storage -y || true
+	cd $(M); rm -f oaisim deploy_omec fabric
 

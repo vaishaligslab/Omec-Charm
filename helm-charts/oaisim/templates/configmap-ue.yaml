@@ -1,0 +1,106 @@
+{{/*
+Copyright 2019-present Open Networking Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- $plmn := tuple .Values.config.plmn.mcc .Values.config.plmn.mnc | include "oaisim.plmn" | quote -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ue
+  labels:
+{{ tuple "ue" . | include "oaisim.metadata_labels" | indent 4 }}
+data:
+  ue_comac_test.conf: |
+    PLMN: {
+      PLMN0: {
+             FULLNAME={{ .Values.config.plmn.name | quote }};
+             SHORTNAME={{ .Values.config.plmn.short_name | quote }};
+             MCC={{ .Values.config.plmn.mcc | quote }};
+             MNC={{ .Values.config.plmn.mnc | quote }};
+      };
+    };
+    {{ range $index, $item := .Values.config.ues }}
+    UE{{ $index }}: {
+      USER: {
+            IMEI="356113022094149";
+            MANUFACTURER="OAISIM";
+            MODEL="OAISIM";
+            PIN="0000";
+      };
+      SIM: {
+           MSIN={{ $item.msin | quote }};
+           USIM_API_K={{ $item.api_key | quote }};
+           OPC={{ $item.opc | quote }};
+           MSISDN={{ $item.msisdn | quote }};
+      };
+      HPLMN= {{ $plmn }};
+      UCPLMN_LIST = ();
+      OPLMN_LIST = ({{ $plmn }});
+      OCPLMN_LIST = ();
+      FPLMN_LIST = ();
+      EHPLMN_LIST= ();
+    };
+    {{ end }}
+  nfapi.conf: |
+    log_config = {
+      global_log_level                      ="debug";
+      global_log_verbosity                  ="high";
+      hw_log_level                          ="debug";
+      hw_log_verbosity                      ="high";
+      phy_log_level                         ="debug";
+      phy_log_verbosity                     ="high";
+      mac_log_level                         ="debug";
+      mac_log_verbosity                     ="high";
+      rlc_log_level                         ="debug";
+      rlc_log_verbosity                     ="high";
+      pdcp_log_level                        ="debug";
+      pdcp_log_verbosity                    ="high";
+      rrc_log_level                         ="debug";
+      rrc_log_verbosity                     ="full";
+    };
+
+    L1s = (
+      {
+        num_cc = 1;
+        tr_n_preference = "nfapi";
+        local_n_if_name  = "lo";
+        remote_n_address = "127.0.0.2";
+        local_n_address  = "127.0.0.1";
+        local_n_portc    = 50000;
+        remote_n_portc   = 50001;
+        local_n_portd    = 50010;
+        remote_n_portd   = 50011;
+      }
+    );
+
+    RUs = (
+      {
+        local_rf       = "yes"
+        nb_tx          = 1
+        nb_rx          = 1
+        att_tx         = 90
+        att_rx         = 0;
+        bands          = [7,38,42,43];
+        max_pdschReferenceSignalPower = -27;
+        max_rxgain                    = 125;
+      }
+    );
+  ue-gen-usim.sh: |
+{{ tuple "bin/_ue-gen-usim.sh.tpl" . | include "oaisim.template" | indent 4 }}
+  ue-init.sh: |
+{{ tuple "bin/_ue-init.sh.tpl" . | include "oaisim.template" | indent 4 }}
+  ue-run.sh: |
+{{ tuple "bin/_ue-run.sh.tpl" . | include "oaisim.template" | indent 4 }}

@@ -1,0 +1,22 @@
+deploy: true
+fullnameOverride: cassandra
+image:
+  tag: 2.1.20
+#selector:
+#  nodeSelector:
+#    cassandra: enabled
+persistence:
+  enabled: false
+config:
+  cluster_size: 1
+  seed_size: 1
+  endpoint_snitch: GossipingPropertyFileSnitch
+readinessProbe:
+  initialDelaySeconds: 10
+resources: {}
+  #requests:
+  #  memory: 4Gi
+  #  cpu: 2
+  #limits:
+  #  memory: 4Gi
+  #  cpu: 2
