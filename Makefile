@@ -26,6 +26,7 @@ os_release	:= $(shell lsb_release -r -s)
 .PHONY: build
 
 deploy_omec: $(M)/system-check $(M)/deploy_omec
+install_docker_helm: $(M)/install_docker_helm
 
 $(M):
 	mkdir -p $(M)
@@ -93,6 +94,11 @@ $(M)/juju: | $(M)
 
 $(M)/install: | $(M)/charmcraft $(M)/lxd $(M)/install_k3s $(M)/juju
 
+
+$(M)/pull_images: | $(M)/install_docker_helm
+	./script/pull_images.sh
+	touch $@
+
 # Install Docker CE
 ## Set up the repository:
 ### Install packages to allow apt to use a repository over HTTPS
@@ -100,10 +106,10 @@ $(M)/install_docker_helm:
 	sudo ./script/install_docker_helm.sh
 	sudo usermod -aG docker $$USER
 	touch $@
-	echo "Run newgrp docker and rerun make cmd"
+	echo "Run newgrp docker and re-run make cmd"
 	exit 0
 
-$(M)/install_k3s: | $(M)/install_docker_helm
+$(M)/install_k3s: | $(M)/install_docker_helm $(M)/pull_images
 	curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$(K3S_VERSION) INSTALL_K3S_EXEC="--write-kubeconfig-mode=600 --flannel-backend=none --disable-network-policy --disable=traefik --cluster-cidr=10.42.0.0/16 --kube-apiserver-arg service-node-port-range=2000-36767" sh -s - --docker
 	mkdir -p $(HOME)/.kube
 	sudo cp -f /etc/rancher/k3s/k3s.yaml $(HOME)/.kube/config
@@ -112,6 +118,7 @@ $(M)/install_k3s: | $(M)/install_docker_helm
 	kubectl apply -f $(RESOURCEDIR)/calico-tigera-operator.yaml; \
 	kubectl apply -f $(RESOURCEDIR)/calico-custom-resources.yaml; \
 	kubectl apply -f $(RESOURCEDIR)/multus-daemonset.yml
+	sleep 15s;
 	kubectl wait pod -n kube-system --for=condition=Ready --all
 	touch $@
 
@@ -129,7 +136,7 @@ $(M)/ue-image: | $(M)/install_k3s $(BUILD)/openairinterface
 		--tag omecproject/lte-uesoftmodem:1.1.0
 	touch $@
 
-$(M)/oaisim: | $(M)/ue-image $(M)/deploy_omec
+$(M)/oaisim: | $(M)/ue-image  $(M)/deploy_omec
 	sudo ip addr add 127.0.0.2/8 dev lo || true
 	$(eval mme_iface=$(shell ip -4 route list default | awk -F 'dev' '{ print $$2; exit }' | awk '{ print $$1 }'))
 	helm upgrade --install --namespace $(MODEL_NAME) oaisim helm-charts/oaisim -f $(AIABVALUES) \
@@ -175,22 +182,26 @@ $(M)/deploy_omec: | $(M)/install /opt/cni/bin $(M)/fabric $(M)/build_omec
 	juju deploy ./bundle.yaml --trust
 	kubectl wait pod -n $(MODEL_NAME) --for=condition=Ready -l app.kubernetes.io/name=spgwc --timeout=300s
 
-$(M)/build_omec: | build-hss build-mme build-spgwc build-spgwu
+$(M)/build_omec: | $(M)/build-hss $(M)/build-mme $(M)/build-spgwc $(M)/build-spgwu
 	echo "Omec chart build done"
 	touch $@
 
-build-hss:
+$(M)/build-hss:
 	echo "bundling hss charm"
 	cd charm/hss && charmcraft pack -v
-build-mme:
+	touch $@
+$(M)/build-mme:
 	echo "bundling mme charm"
 	cd charm/mme && charmcraft pack -v
-build-spgwc:
+	touch $@
+$(M)/build-spgwc:
 	echo "bundling spgwc charm"
 	cd charm/spgwc && charmcraft pack -v
-build-spgwu:
+	touch $@
+$(M)/build-spgwu:
 	echo "bundling spgwu charm"
 	cd charm/spgwu && charmcraft pack -v
+	touch $@
 
 deploy-hss:
 	juju deploy cassandra-k8s
@@ -223,6 +234,20 @@ reset-omec:
 	juju remove-application hss || true
 	#juju remove-application cassandra-k8s || true
 	helm del cassandra -n $(MODEL_NAME) || true
+	kubectl delete -f $(RESOURCEDIR)/ovs-network.yaml -n $(MODEL_NAME) || true
 	juju destroy-model $(MODEL_NAME) --destroy-storage -y || true
 	cd $(M); rm -f oaisim deploy_omec fabric
 
+
+clean-oaisim:
+	helm del oaisim -n $(MODEL_NAME) || true
+	kubectl delete job ue-setup-if -n $(MODEL_NAME) || true
+	kubectl delete job ue-teardown-if -n $(MODEL_NAME) || true
+	cd $(M) && rm -rf oaisim || true
+
+clean-omec-build: | clean-oaisim
+	cd charm/hss && charmcraft clean
+	cd charm/mme && charmcraft clean
+	cd charm/spgwc && charmcraft clean
+	cd charm/spgwu && charmcraft clean
+	cd $(M) && rm -rf build-mme build-hss build-spgwc build-spgwu build_omec || true

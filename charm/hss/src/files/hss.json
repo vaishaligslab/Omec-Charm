@@ -9,7 +9,7 @@
     "gtwport" : 9080,
     "restport" : 9081,
     "ossport" : 9082,
-    "casssrv": "cassandra-k8s-endpoints",
+    "casssrv": "cassandra",
     "cassusr": "root",
     "casspwd": "root",
     "cassdb" : "vhss",

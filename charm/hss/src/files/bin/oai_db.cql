@@ -1,4 +1,4 @@
-CREATE KEYSPACE IF NOT EXISTS vhss WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': '1'};
+CREATE KEYSPACE IF NOT EXISTS vhss WITH replication = {'class': 'NetworkTopologyStrategy', 'DC1': '1'};
 
 CREATE TABLE IF NOT EXISTS vhss.users_imsi (
     imsi text PRIMARY KEY,
