@@ -27,6 +27,7 @@ os_release	:= $(shell lsb_release -r -s)
 
 deploy_omec: $(M)/system-check $(M)/deploy_omec
 install_docker_helm: $(M)/install_docker_helm
+install: $(M)/install
 
 $(M):
 	mkdir -p $(M)
@@ -102,7 +103,7 @@ $(M)/pull_images: | $(M)/install_docker_helm
 # Install Docker CE
 ## Set up the repository:
 ### Install packages to allow apt to use a repository over HTTPS
-$(M)/install_docker_helm:
+$(M)/install_docker_helm: | $(M)
 	sudo ./script/install_docker_helm.sh
 	sudo usermod -aG docker $$USER
 	touch $@
@@ -186,19 +187,19 @@ $(M)/build_omec: | $(M)/build-hss $(M)/build-mme $(M)/build-spgwc $(M)/build-spg
 	echo "Omec chart build done"
 	touch $@
 
-$(M)/build-hss:
+$(M)/build-hss: | $(M)
 	echo "bundling hss charm"
 	cd charm/hss && charmcraft pack -v
 	touch $@
-$(M)/build-mme:
+$(M)/build-mme: | $(M)
 	echo "bundling mme charm"
 	cd charm/mme && charmcraft pack -v
 	touch $@
-$(M)/build-spgwc:
+$(M)/build-spgwc: $(M)
 	echo "bundling spgwc charm"
 	cd charm/spgwc && charmcraft pack -v
 	touch $@
-$(M)/build-spgwu:
+$(M)/build-spgwu: $(M)
 	echo "bundling spgwu charm"
 	cd charm/spgwu && charmcraft pack -v
 	touch $@
