@@ -28,6 +28,7 @@ os_release	:= $(shell lsb_release -r -s)
 deploy_omec: $(M)/system-check $(M)/deploy_omec
 install_docker_helm: $(M)/install_docker_helm
 install: $(M)/install
+build_omec: $(M)/build_omec
 oaisim: $(M)/oaisim
 
 $(M):
@@ -120,7 +121,7 @@ $(M)/install_k3s: | $(M)/install_docker_helm $(M)/pull_images
 	kubectl apply -f $(RESOURCEDIR)/calico-tigera-operator.yaml; \
 	kubectl apply -f $(RESOURCEDIR)/calico-custom-resources.yaml; \
 	kubectl apply -f $(RESOURCEDIR)/multus-daemonset.yml
-	sleep 15s;
+	sleep 60s;
 	kubectl wait pod -n kube-system --for=condition=Ready --all
 	touch $@
 
@@ -158,7 +159,6 @@ $(M)/oaisim: | $(M)/ue-image  $(M)/deploy_omec
 	echo "Copy cni plugins"
 	sudo cp $(RESOURCEDIR)/net-plugins/* /opt/cni/bin/
 	sudo chmod +x /opt/cni/bin/*
-	touch $@
 
 # TODO: need to connect ONOS
 $(M)/fabric: | $(M)/install_k3s /opt/cni/bin
