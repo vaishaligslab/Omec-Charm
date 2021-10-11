@@ -5,14 +5,17 @@ msisdn=1122334455
 apn="apn1"
 opc="d4416644f6154936193433dd20a0ace0"
 sqn=96
-cassandra_ip="cassandra-k8s"
-mmeidentity="mme.development.svc.cluster.local"
+cassandra_ip="cassandra"
+mmeidentity="mme.NAMESPACE.svc.cluster.local"
 no_of_users=1
-mmerealm="development.svc.cluster.local"
+mmerealm="NAMESPACE.svc.cluster.local"
 key="465b5ce8b199b49faa5f0a2ee238a6bc"
 isdn=19136246000
 id=1
 unreachability=1
+
+
+cp /bin/oai_db.cql /opt/c3po/hssdb/oai_db.cql
 
 until cqlsh $cassandra_ip 9042 --file /opt/c3po/hssdb/oai_db.cql;
   do echo "Provisioning HSSDB";

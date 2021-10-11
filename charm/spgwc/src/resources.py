@@ -29,21 +29,6 @@ class SpgwcResources:
 
     def apply(self) -> None:
         """Create the required Kubernetes resources for the dashboard"""
-        # Create required Kubernetes Service Accounts
-        #for sa in self._service_accounts:
-        #    svc_accounts = self.core_api.list_namespaced_service_account(
-        #        namespace=sa["namespace"],
-        #        field_selector=f"metadata.name={sa['body'].metadata.name}",
-        #    )
-        #    if not svc_accounts.items:
-        #        self.core_api.create_namespaced_service_account(**sa)
-        #    else:
-        #        logger.info(
-        #            "service account '%s' in namespace '%s' exists, patching",
-        #            sa["body"].metadata.name,
-        #            sa["namespace"],
-        #        )
-        #        self.core_api.patch_namespaced_service_account(name=sa["body"].metadata.name, **sa)
 
         # Create Kubernetes Services
         for service in self._services:
@@ -63,84 +48,16 @@ class SpgwcResources:
                     name=service["body"].metadata.name, **service
                 )
 
-        # Create Kubernetes ConfigMaps
-        #for cm in self._configmaps:
-        #    s = self.core_api.list_namespaced_config_map(
-        #        namespace=cm["namespace"],
-        #        field_selector=f"metadata.name={cm['body'].metadata.name}",
-        #    )
-        #    if not s.items:
-        #        self.core_api.create_namespaced_config_map(**cm)
-        #    else:
-        #        logger.info(
-        #            "configmap '%s' in namespace '%s' exists, patching",
-        #            cm["body"].metadata.name,
-        #            cm["namespace"],
-        #        )
-        #        self.core_api.patch_namespaced_config_map(name=cm["body"].metadata.name, **cm)
 
-        # Create Kubernetes Roles
-#        for role in self._roles:
-#            r = self.auth_api.list_namespaced_role(
-#                namespace=role["namespace"],
-#                field_selector=f"metadata.name={role['body'].metadata.name}",
-#            )
-#            if not r.items:
-#                self.auth_api.create_namespaced_role(**role)
-#            else:
-#                logger.info(
-#                    "role '%s' in namespace '%s' exists, patching",
-#                    role["body"].metadata.name,
-#                    role["namespace"],
-#                )
-#                self.auth_api.patch_namespaced_role(name=role["body"].metadata.name, **role)
-#
-#        # Create Kubernetes Role Bindings
-#        for rb in self._rolebindings:
-#            r = self.auth_api.list_namespaced_role_binding(
-#                namespace=rb["namespace"],
-#                field_selector=f"metadata.name={rb['body'].metadata.name}",
-#            )
-#            if not r.items:
-#                self.auth_api.create_namespaced_role_binding(**rb)
-#            else:
-#                logger.info(
-#                    "role binding '%s' in namespace '%s' exists, patching",
-#                    rb["body"].metadata.name,
-#                    rb["namespace"],
-#                )
-#                self.auth_api.patch_namespaced_role_binding(name=rb["body"].metadata.name, **rb)
-#
-#        logger.info("Created additional Kubernetes resources")
-#
+        logger.info("Created additional Kubernetes resources")
+
     def delete(self) -> None:
-        """Delete all of the Kubernetes resources created by the apply method"""
-        # Delete service accounts
-        #for sa in self._service_accounts:
-        #    self.core_api.delete_namespaced_service_account(
-        #        namespace=sa["namespace"], name=sa["body"].metadata.name
-        #    )
+        """Delete all of the Kubernetes resources created by the apply method""" 
         # Delete Kubernetes services
         for service in self._services:
             self.core_api.delete_namespaced_service(
                 namespace=service["namespace"], name=service["body"].metadata.name
             )
-        # Delete Kubernetes configmaps
-        #for cm in self._configmaps:
-        #    self.core_api.delete_namespaced_config_map(
-        #        namespace=cm["namespace"], name=cm["body"].metadata.name
-        #    )
-        ## Delete Kubernetes roles
-        #for role in self._roles:
-        #    self.auth_api.delete_namespaced_role(
-        #        namespace=role["namespace"], name=role["body"].metadata.name
-        #    )
-        ## Delete Kubernetes role bindings
-        #for rb in self._rolebindings:
-        #    self.auth_api.delete_namespaced_role_binding(
-        #        namespace=rb["namespace"], name=rb["body"].metadata.name
-        #    )
-
         logger.info("Deleted additional Kubernetes resources")
 
     @property
@@ -225,23 +142,6 @@ class SpgwcResources:
         ]
 
     @property
-    def _service_accounts(self) -> list:
-        """Return a dictionary containing parameters for the mme svc account"""
-        return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1ServiceAccount(
-                    api_version="v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme",
-                        labels={"app.kubernetes.io/name": self.app.name},
-                    ),
-                ),
-            }
-        ]
-
-    @property
     def add_container_resource_limit(self, containers):
         #Length of list containers
         length = len(containers)
@@ -315,6 +215,10 @@ class SpgwcResources:
 
     def loadfile(self, file_name):
         """Read the file content and return content data"""
+
+        sed_command = "sed -i 's/NAMESPACE/{1}/' {0}".format(file_name, self.namespace)
+        os.system(sed_command)
+
         with open(file_name, 'r') as f:
             data = f.read()
             f.close()
@@ -329,95 +233,3 @@ class SpgwcResources:
             file_name = os.path.basename(file_path)
             dicts[file_name] = file_data
         return dicts
-
-    @property
-    def _configmaps(self) -> list:
-        """Return a list of ConfigMaps needed by the mme"""
-        dict_script = self._get_config_data(self.script_path)
-        dict_config = self._get_config_data(self.config_path)
-        return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1ConfigMap(
-                    api_version="v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme-scripts",
-                        labels={
-                            "app.kubernetes.io/name": self.app.name,
-                            "app": self.app.name
-                        },
-                    ),
-                    data=dict_script,
-                ),
-            },
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1ConfigMap(
-                    api_version="v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme-configs",
-                        labels={
-                            "app.kubernetes.io/name": self.app.name,
-                            "app": self.app.name
-                        },
-                    ),
-                    data=dict_config,
-                ),
-            }
-        ]
-
-    @property
-    def _roles(self) -> list:
-        """Return a list of Roles required by the mme"""
-        return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1Role(
-                    api_version="rbac.authorization.k8s.io/v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme",
-                        labels={"app.kubernetes.io/name": self.app.name},
-                    ),
-                    rules=[
-                        # Allow mme to get, update, delete, list and patch the resources
-                        kubernetes.client.V1PolicyRule(
-                            api_groups=["", "extensions", "batch", "apps"],
-                            resources=["statefulsets", "daemonsets", "jobs", "pods", "services", "endpoints", "configmaps"],
-                            verbs=["get", "update", "delete", "list", "patch"],
-                        ),
-                    ],
-                ),
-            }
-        ]
-
-    @property
-    def _rolebindings(self) -> list:
-        """Return a list of Role Bindings required by the mme"""
-        return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1RoleBinding(
-                    api_version="rbac.authorization.k8s.io/v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme",
-                        labels={"app.kubernetes.io/name": self.app.name},
-                    ),
-                    role_ref=kubernetes.client.V1RoleRef(
-                        api_group="rbac.authorization.k8s.io",
-                        kind="Role",
-                        name="mme",
-                    ),
-                    subjects=[
-                        kubernetes.client.V1Subject(
-                            kind="ServiceAccount",
-                            name="mme",
-                            namespace=self.namespace,
-                        )
-                    ],
-                ),
-            }
-        ]

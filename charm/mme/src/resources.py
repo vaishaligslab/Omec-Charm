@@ -161,7 +161,7 @@ class MmeResources:
                 ],
                 env = [
                     kubernetes.client.V1EnvVar(
-                        name = "NAMESPACE",
+                        name = "Namespace",
                         value_from = kubernetes.client.V1EnvVarSource(
                             field_ref = kubernetes.client.V1ObjectFieldSelector(
                                 field_path = "metadata.namespace",
@@ -406,23 +406,6 @@ class MmeResources:
             }
         ]
 
-    @property
-    def add_container_resource_limit(self, containers):
-        #Length of list containers
-        length = len(containers)
-        itr = 1
-
-        while itr < length:
-            containers[itr].resources = kubernetes.client.V1ResourceRequirements(
-                limits = {
-                    'cpu': '0.2',
-                    'memory': '200Mi'
-                },
-                requests = {
-                    'cpu': '0.2',
-                    'memory': '200Mi'
-                }
-            )
 
     @property
     def _services(self) -> list:
@@ -525,8 +508,11 @@ class MmeResources:
             },
         ]
 
-    def loadfile(self, file_name):
+    def _loadfile(self, file_name):
         """Read the file content and return content data"""
+
+        sed_command = "sed -i 's/NAMESPACE/{1}/' {0}".format(file_name, self.namespace)
+        os.system(sed_command)
         with open(file_name, 'r') as f:
             data = f.read()
             f.close()
@@ -537,7 +523,7 @@ class MmeResources:
         """Return the dictionary of file contnent and name needed by mme"""
         dicts = {}
         for file_path in glob.glob(files_path):
-            file_data = self.loadfile(file_path)
+            file_data = self._loadfile(file_path)
             file_name = os.path.basename(file_path)
             dicts[file_name] = file_data
         return dicts

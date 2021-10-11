@@ -14,23 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
+set -ex
 
-# Check if mme IP has been changed
-kubectl get cm -n $Namespace -o json mme-ip > mme-ip.json
-mme_ip=$(jq '.data.IP' mme-ip.json)
-if [ $mme_ip != null ] && [ $mme_ip = \"$POD_IP\" ]; then
-    return
-fi
+COMMAND="${@:-start}"
 
-# Update mme IP if it has been changed
-cat <<EOF >patch.json
-{"data": {"IP": "$POD_IP"}}
-EOF
-kubectl patch -n $Namespace configmap mme-ip --patch "$(cat patch.json)"
+function start () {
+  cd /openairinterface5g/cmake_targets
+  cp /opt/oaisim/ue/config/nfapi.conf /etc/oaisim/ue/nfapi.conf
 
-# Update and restart SPGWC if it is deployed
-kubectl get po -n $Namespace --selector app.kubernetes.io/name=spgwc | grep Running -q
-if [ $? -eq 0 ]; then
-    kubectl rollout restart -n $Namespace statefulset/spgwc
-fi
+  # Copy USIM data
+  cp /etc/oaisim/ue/.u* .
+  cp /etc/oaisim/ue/.u* ./lte_build_oai/build/
+
+  noOfUes={{ len .Values.config.ues }}
+
+  exec ./lte_build_oai/build/lte-uesoftmodem -O /etc/oaisim/ue/nfapi.conf --L2-emul 3 --num-ues $noOfUes --nums_ue_thread $noOfUes
+}
+
+function stop () {
+  # TODO: clean up ip tables and rules
+  kill -TERM 1
+}
+
+$COMMAND

@@ -32,7 +32,7 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 import resources
 from pathlib import Path
-from files import *
+#from files import *
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,6 @@ class SpgwuCharm(CharmBase):
         super().__init__(*args)
         self.framework.observe(self.on.spgwu_pebble_ready, self._on_spgwu_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.fortune_action, self._on_fortune_action)
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.remove, self._on_remove)
 
@@ -63,8 +62,6 @@ class SpgwuCharm(CharmBase):
 
         Learn more about Pebble layers at https://github.com/canonical/pebble
         """
-        # Get a reference the container attribute on the PebbleReadyEvent
-        container = event.workload
         # Define an initial Pebble layer configuration
         pebble_layer = {
             "summary": "spgwu layer",
@@ -89,8 +86,10 @@ class SpgwuCharm(CharmBase):
         self._push_file_to_container(container, "src/files/Config/*.*", configPath, 0o755)
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("spgwu", pebble_layer, combine=True)
-        # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        # Check if the mme service is already running and start it if not
+        if not container.get_service("spgwu").is_running():
+            container.start("spgwu")
+            logger.info("spgwu service started")
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
@@ -112,29 +111,31 @@ class SpgwuCharm(CharmBase):
 
         # Default StatefulSet needs patching for extra volume mounts. Ensure that
         # the StatefulSet is patched on each invocation.
-    #if not self._statefulset_patched:"""
-        self._patch_stateful_set()
-        self.unit.status = MaintenanceStatus("waiting for changes to apply")
+        if not self._statefulset_patched:
+            self.unit.status = MaintenanceStatus("waiting for changes to apply")
+            self._patch_stateful_set()
 
-        self.unit.status = ActiveStatus()
+            self.unit.status = ActiveStatus()
 
-
-    def _on_fortune_action(self, event):
-        """Just an example to show how to receive actions.
-
-        TEMPLATE-TODO: change this example to suit your needs.
-        If you don't need to handle actions, you can remove this method,
-        the hook created in __init__.py for it, the corresponding test,
-        and the actions.py file.
-
-        Learn more about actions at https://juju.is/docs/sdk/actions
-        """
-        fail = event.params["fail"]
-        if fail:
-            event.fail(fail)
-        else:
-            event.set_results({"fortune": "A bug in the code is worth two in the documentation."})
-
+    @property
+    def _statefulset_patched(self) -> bool:
+        """Slightly naive check to see if the StatefulSet has already been patched"""
+        # Get an API client
+        apps_api = kubernetes.client.AppsV1Api(kubernetes.client.ApiClient())
+        # Get the StatefulSet for the deployed application
+        s = apps_api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
+        # Create a volume mount that we expect to be present after patching the StatefulSet
+        expected = kubernetes.client.V1EnvVar(
+                name = "MEM_LIMIT",
+                value_from = kubernetes.client.V1EnvVarSource(
+                    resource_field_ref = kubernetes.client.V1ResourceFieldSelector(
+                        container_name="spgwu",
+                        resource="limits.memory",
+                        divisor="1Mi",
+                    ),
+                ),
+            )
+        return expected in s.spec.template.spec.containers[1].env
 
     def _patch_stateful_set(self) -> None:
         """Patch the StatefulSet to include specific ServiceAccount and Secret mounts"""
@@ -146,7 +147,25 @@ class SpgwuCharm(CharmBase):
         s = api.read_namespaced_stateful_set(name=self.app.name, namespace=self.namespace)
         # Add the required volume mounts to the spgwu container spec
         s.spec.template.spec.init_containers.extend(r.add_spgwu_init_containers)
+        # Add addittonal environment variables to the container
+        s.spec.template.spec.containers[1].env.extend(r.spgwu_add_env)
+        #Assgning resource limits and request for cpu and memory for spgwu container
+        s.spec.template.spec.containers[1].resources = kubernetes.client.V1ResourceRequirements(
+                limits = {
+                    "cpu": "4",
+                    "memory": "8Gi"
+                },
+                requests = {
+                    "cpu": "4",
+                    "memory": "8Gi"
+                }
+            )
+        s.spec.template.spec.containers[1].security_context = kubernetes.client.V1SecurityContext(
+                capabilities=kubernetes.client.V1Capabilities(add=["IPC_LOCK", "NET_ADMIN"])
+        )
 
+        s.spec.template.spec.containers[1].stdin = True
+        s.spec.template.spec.containers[1].tty = True
         #s.spec.template.spec.containers[1].volume_mounts.extend(r.spgwu_volume_mounts)
         s.spec.template.spec.volumes.extend(r.spgwu_volumes)
         s.spec.template.metadata.annotations = {
@@ -154,12 +173,12 @@ class SpgwuCharm(CharmBase):
                 {
                     "name": "s1u-net",
                     "interface": "s1u-net",
-                    "ips": [ "11.1.1.110/24" ]
+                    "ips": "11.1.1.110/24"
                 },
                 {
                     "name": "sgi-net",
                     "interface": "sgi-net",
-                    "ips": [ "13.1.1.110/24" ]
+                    "ips": "13.1.1.110/24"
                 }
             ]''',
         }
@@ -222,7 +241,7 @@ class SpgwuCharm(CharmBase):
     def _push_file_to_container(self, container, srcPath, dstPath, filePermission):
         for filePath in glob.glob(srcPath):
             print("Loading file name:" + filePath)
-            fileData = loadfile(filePath)
+            fileData = resources.SpgwuResources(self).loadfile(filePath)
             fileName = os.path.basename(filePath)
             container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
 

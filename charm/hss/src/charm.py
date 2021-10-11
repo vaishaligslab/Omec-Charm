@@ -56,8 +56,6 @@ class HssCharm(CharmBase):
 
         Learn more about Pebble layers at https://github.com/canonical/pebble
         """
-        # Get a reference the container attribute on the PebbleReadyEvent
-        container = event.workload
         # Define an initial Pebble layer configuration
         pebble_layer = {
             "summary": "hss layer",
@@ -77,12 +75,13 @@ class HssCharm(CharmBase):
         scriptPath = "/etc/hss/conf/"
         self._push_file_to_container(container, "src/files/*.conf", scriptPath, 0o755)
         self._push_file_to_container(container, "src/files/*.json", scriptPath, 0o755)
-        self._push_file_to_container(container, "src/files/*.sh", "/bin/", 0o755)
+        self._push_file_to_container(container, "src/files/bin/*.*", "/bin/", 0o755)
 
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("hss", pebble_layer, combine=True)
-        # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        if not container.get_service("hss").is_running():
+            container.start("hss")
+            logger.info("hss service started")
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
@@ -120,8 +119,12 @@ class HssCharm(CharmBase):
 
     def _push_file_to_container(self, container, srcPath, dstPath, filePermission):
         for filePath in glob.glob(srcPath):
+            set_namespace=self.namespace
+            #logger.info("__________________NAMESPACE="+name_space+"___________________________")
+            #name_space="OMEC"
+            logger.info("__________________NAMESPACE="+set_namespace+"___________________________")
             print("Loading file name:" + filePath)
-            fileData = loadfile(filePath)
+            fileData = loadfile(filePath,set_namespace)
             fileName = os.path.basename(filePath)
             container.push(dstPath + fileName, fileData, make_dirs=True, permissions=filePermission)
 
@@ -147,6 +150,8 @@ class HssCharm(CharmBase):
 
     def _on_install(self, _):
         """Event handler for InstallEvent during which we will update the K8s service."""
+        #name_space=str(self.namespace)
+        #logger.info("__________________NAMESPACE="+name_space+"___________________________")
         self._patch_k8s_service()
 
 
@@ -166,6 +171,10 @@ class HssCharm(CharmBase):
         # the config may need update. Calling the common hook to update.
         self._common_exit_hook()'''
 
+    @property
+    def namespace(self) -> str:
+        with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
+            return f.read().strip()
 
 
 if __name__ == "__main__":

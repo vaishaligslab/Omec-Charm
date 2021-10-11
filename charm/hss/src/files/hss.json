@@ -1,7 +1,7 @@
 {"common": {
     "fdcfg": "conf/hss.conf",
-    "originhost": "hss.development.svc.cluster.local",
-    "originrealm": "development.svc.cluster.local",
+    "originhost": "hss.NAMESPACE.svc.cluster.local",
+    "originrealm": "NAMESPACE.svc.cluster.local",
     "prom_port": 9089
  },
  "hss": {
@@ -9,7 +9,7 @@
     "gtwport" : 9080,
     "restport" : 9081,
     "ossport" : 9082,
-    "casssrv": "cassandra-k8s-endpoints",
+    "casssrv": "cassandra",
     "cassusr": "root",
     "casspwd": "root",
     "cassdb" : "vhss",

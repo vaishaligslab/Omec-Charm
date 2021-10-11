@@ -105,36 +105,20 @@ class SpgwuResources:
             ),
         ]
 
-#    @property
-#    def spgwu_volume_mounts(self) -> dict:
-#        """Returns the additional volume mounts for the mme-app containers"""
-#        return [
-#            kubernetes.client.V1VolumeMount(
-#                mount_path="/abc/",
-#                name="dp-script",
-#            ),
-#            kubernetes.client.V1VolumeMount(
-#                name="dp-config",
-#                mount_path="/etc/dp/config",
-#            ),
-#        ]'''
-
-
     @property
-    def _service_accounts(self) -> list:
-        """Return a dictionary containing parameters for the mme svc account"""
+    def spgwu_add_env(self) -> dict:
+        """Returns the additional env for the spgwc containers"""
         return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1ServiceAccount(
-                    api_version="v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme",
-                        labels={"app.kubernetes.io/name": self.app.name},
+            kubernetes.client.V1EnvVar(
+                name = "MEM_LIMIT",
+                value_from = kubernetes.client.V1EnvVarSource(
+                    resource_field_ref = kubernetes.client.V1ResourceFieldSelector(
+                        container_name="spgwu",
+                        resource="limits.memory",
+                        divisor="1Mi",
                     ),
                 ),
-            }
+            ),
         ]
 
     @property
@@ -231,59 +215,7 @@ class SpgwuResources:
            
          ]
 
-    @property
-    def _roles(self) -> list:
-        """Return a list of Roles required by the mme"""
-        return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1Role(
-                    api_version="rbac.authorization.k8s.io/v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme",
-                        labels={"app.kubernetes.io/name": self.app.name},
-                    ),
-                    rules=[
-                        # Allow mme to get, update, delete, list and patch the resources
-                        kubernetes.client.V1PolicyRule(
-                            api_groups=["", "extensions", "batch", "apps"],
-                            resources=["statefulsets", "daemonsets", "jobs", "pods", "services", "endpoints", "configmaps"],
-                            verbs=["get", "update", "delete", "list", "patch"],
-                        ),
-                    ],
-                ),
-            }
-        ]
 
-    @property
-    def _rolebindings(self) -> list:
-        """Return a list of Role Bindings required by the mme"""
-        return [
-            {
-                "namespace": self.namespace,
-                "body": kubernetes.client.V1RoleBinding(
-                    api_version="rbac.authorization.k8s.io/v1",
-                    metadata=kubernetes.client.V1ObjectMeta(
-                        namespace=self.namespace,
-                        name="mme",
-                        labels={"app.kubernetes.io/name": self.app.name},
-                    ),
-                    role_ref=kubernetes.client.V1RoleRef(
-                        api_group="rbac.authorization.k8s.io",
-                        kind="Role",
-                        name="mme",
-                    ),
-                    subjects=[
-                        kubernetes.client.V1Subject(
-                            kind="ServiceAccount",
-                            name="mme",
-                            namespace=self.namespace,
-                        )
-                    ],
-                ),
-            }
-        ]
 
     @property
     def spgwu_volumes(self) -> dict:

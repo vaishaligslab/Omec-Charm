@@ -1,0 +1,26 @@
+bundle: kubernetes
+applications:
+  hss:
+    charm: ./charm/hss/hss_ubuntu-20.04-amd64.charm
+    scale: 1
+    trust: true
+    resources:
+      hss-image: vaishalinicky/cqlshimage:v5
+  mme:
+    charm: ./charm/mme/mme_ubuntu-20.04-amd64.charm
+    scale: 1
+    trust: true
+    resources:
+      mme-image: amitinfo2k/nucleus-mme:9f86f87
+  spgwc:
+    charm: ./charm/spgwc/spgwc_ubuntu-20.04-amd64.charm
+    scale: 1
+    trust: true
+    resources:
+      spgwc-image: amitinfo2k/ngic-cp:1.9.0
+  spgwu:
+    charm: ./charm/spgwu/spgwu_ubuntu-20.04-amd64.charm
+    scale: 1
+    trust: true
+    resources:
+      spgwu-image: amitinfo2k/ngic-dp:1.9.0
