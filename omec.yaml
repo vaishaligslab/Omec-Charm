@@ -21,15 +21,6 @@ config:
      opc: "d4416644f6154936193433dd20a0ace0"
      msisdn: "1122334456"
      sqn: "96"
-  cdnRemotes:
-  - name: remote-1
-    ip: 10.73.73.71 # One of the central cluster node IP address
-    port: 30935
-    streams: # Video streams from CDN-Remote
-    - name: 360p
-      value: 360
-    - name: 480p
-      value: 480
   sriov:
     enabled: false # If you want to use Host Network, please unset this flag.
   nginx:
