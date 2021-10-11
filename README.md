@@ -51,7 +51,16 @@ $ make build_omec
 $ make deploy_omec
 ```
 
-## Build or deploy individual components e.g. spgwu
+Can check the status of charm through following command
+```
+watch -c juju status --color
+```
+Command to view logs
+```
+juju debug-log
+```
+
+### Build or deploy individual components e.g. spgwu
 $ make build-\<component-name\> <br/>
 $ make deploy-\<component-name\>
 ```
@@ -61,11 +70,20 @@ $make build-spgwu
 $make deploy-spgwu
 ```
 
+## Deploy oaisim
+```
+$ make oaisim
+```
+
+## Cleanup oaisim
+```
+make clean-oaisim
+```
+
 ## Cleanup omec applications
 ```
 $ make reset-omec
 ```
-
 
 TODO:
 #1 Use cassandra charm instead of cassandra helm chart (Unable to implement  currently due to relations and cassandra charm stability issue)
