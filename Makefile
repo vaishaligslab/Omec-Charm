@@ -28,6 +28,7 @@ os_release	:= $(shell lsb_release -r -s)
 deploy_omec: $(M)/system-check $(M)/deploy_omec
 install_docker_helm: $(M)/install_docker_helm
 install: $(M)/install
+oaisim: $(M)/oaisim
 
 $(M):
 	mkdir -p $(M)
@@ -182,6 +183,7 @@ $(M)/deploy_omec: | $(M)/install /opt/cni/bin $(M)/fabric $(M)/build_omec
 	helm install cassandra incubator/cassandra --version "0.13.1" --values $(RESOURCEDIR)/cassandra_values.yaml -n $(MODEL_NAME)
 	juju deploy ./bundle.yaml --trust
 	kubectl wait pod -n $(MODEL_NAME) --for=condition=Ready -l app.kubernetes.io/name=spgwc --timeout=300s
+	touch $@
 
 $(M)/build_omec: | $(M)/build-hss $(M)/build-mme $(M)/build-spgwc $(M)/build-spgwu
 	echo "Omec chart build done"
@@ -195,11 +197,11 @@ $(M)/build-mme: | $(M)
 	echo "bundling mme charm"
 	cd charm/mme && charmcraft pack -v
 	touch $@
-$(M)/build-spgwc: $(M)
+$(M)/build-spgwc: | $(M)
 	echo "bundling spgwc charm"
 	cd charm/spgwc && charmcraft pack -v
 	touch $@
-$(M)/build-spgwu: $(M)
+$(M)/build-spgwu: | $(M)
 	echo "bundling spgwu charm"
 	cd charm/spgwu && charmcraft pack -v
 	touch $@
