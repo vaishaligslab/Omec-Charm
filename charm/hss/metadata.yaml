@@ -1,22 +1,21 @@
 # Copyright 2021 root
 # See LICENSE file for licensing details.
 
-# For a complete list of supported options, see:
-# https://discourse.charmhub.io/t/charm-metadata-v2/3674/15
-name: hss
+name: omec-hss
 display-name: |
-  TEMPLATE-TODO: fill out a display name for the Charmcraft store
+  OMEC-HSS
 description: |
-  TEMPLATE-TODO: fill out the charm's description
+  Home Subscriber Server (HSS) is the main database of the current generation's cellular 
+  communications systems.
 summary: |
-  TEMPLATE-TODO: fill out the charm's summary
+  Home Subscriber Server (HSS) is the main database of the current generation's cellular 
+  communications systems.
 
-# TEMPLATE-TODO: replace with containers for your workload (delete for non-k8s)
 containers:
   hss:
     resource: hss-image
+    upstream-source: vaishalinicky/cqlshimage:v5
 
-# TEMPLATE-TODO: each container defined above must specify an oci-image resource
 resources:
   hss-image:
     type: oci-image
