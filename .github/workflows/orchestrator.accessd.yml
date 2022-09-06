@@ -1,0 +1,37 @@
+name: omec-hss
+
+on:
+  push:
+    paths:
+      - "charm/hss/**"
+
+jobs:
+  omec-hss-lint-report:
+    name: Lint report (omec-hss)
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install tox
+        run: pip install tox
+      - name: Run tests using tox
+        run: cd charm/omec-hss-operator && tox -e lint
+
+  omec-hss-static-analysis:
+    name: Static analysis (omec-hss)
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install tox
+        run: pip install tox
+      - name: Run tests using tox
+        run: cd charm/omec-hss-operator && tox -e static
+
+  omec-hss-unit-tests-with-coverage:
+    name: Unit tests (omec-hss)
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install tox
+        run: pip install tox
+      - name: Run tests using tox
+        run: cd charm/omec-hss-operator && tox -e unit
