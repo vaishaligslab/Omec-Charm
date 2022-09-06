@@ -1,97 +1,110 @@
 # OMEC Charm
 
-Open Mobiled Evolved Core (OMEC) is an opensource EPC (4G) Core
-Consisten of MME,HSS,SPGWC and SPGWU components
+Open Mobile Evolved Core (OMEC) is an opensource EPC (4G) Core
+Consisting of the MME, HSS, SPGWC and SPGWU components.
 
+## Usage
 
-## Steps for setup installation with k3s
+This section details the steps needed for installing OMEC using k3s.
 
-### Install Docker and Helm
-```
+### Pre-requisites
+
+Install Docker and Helm:
+
+```bash
 $ make install_docker_helm
 ```
-Need to access docker with unprivledged access run below command
-```
+
+Configure group membership to use `docker`: 
+
+```bash
 $ newgrp docker
 ```
 
-### Install k3s, charmcraft, lxd and juju
-Note: k3s clsuter is need to be accessible from non-root user. Will set kubeconfig path in non-root location
-```
-$ echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
-$ source ~/.bashrc
-```
-Config file will be copied through makefile with non-root user grp
+Install OMEC pre-requisites:
 
-```
+```bash
 $ make install
 ```
-Above make rule will dpeloy all needed resources with required versions
+
+The above comment will deploy all needed resources with required versions:
+
+| Software   | Version       |
+|------------|---------------|
+| Docker     | 19.03.15      |
+| Helm       | 3.5.4         |
+| k3s        | v1.20.7+k3s1  |
+| lxd        | 4.18/stable   |
+| charmcraft | latest/stable |
+
+> Note: k3s clsuter is need to be accessible from non-root user. Will set kubeconfig path in non-root location
+> You can move the kubeconfig file to `bashrc`:
+> 
+> ```bash
+> $ echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
+> $ source ~/.bashrc
+> ```
 
 
-**Docker:** v19.03.15
+###  Build OMEC  charm
 
-**Helm:** v3.5.4
-
-**k3s:** "v1.20.7+k3s1"
-
-**lxd:** 4.18/stable
-
-**charmcraft:** latest/stable
-
-**juju:** 2.9/stable
-
-
-##  Build OMEC  charm
-```
+```bash
 $ make build_omec
 ```
-##  Deploy OMEC charm
-```
+
+###  Deploy OMEC charms
+
+```bash
 $ make deploy_omec
 ```
 
-Can check the status of charm through following command
-```
+Check the charm status:
+
+```bash
 watch -c juju status --color
 ```
-Command to view logs
-```
+
+View logs:
+
+```bash
 juju debug-log
 ```
 
 ### Build or deploy individual components e.g. spgwu
+
+```bash
 $ make build-\<component-name\> <br/>
 $ make deploy-\<component-name\>
 ```
-e.g.
 
-$make build-spgwu
-$make deploy-spgwu
+Example:
+
+```bash
+$ make build-spgwu
+$ make deploy-spgwu
 ```
 
-## Deploy oaisim
-```
+### Deploy oaisim
+
+```bash
 $ make oaisim
 ```
 
-## Cleanup oaisim
-```
-make clean-oaisim
+### Cleanup oaisim
+
+```bash
+$ make clean-oaisim
 ```
 
-## Cleanup omec applications
-```
+### Cleanup OMEC applications
+
+```bash
 $ make reset-omec
 ```
 
-TODO:
-#1 Use cassandra charm instead of cassandra helm chart (Unable to implement  currently due to relations and cassandra charm stability issue)
+## TODO
 
-#2 Deploy network-attachment-definition through charm for spgwu instead of deploying directly using kubectl.
-
-#3 Use relations between all component intead of creating service through python-kubernetes-API
-
-#4 Enhance bundle.yaml use. 
-
-
+1. Use cassandra charm instead of cassandra helm chart (Unable to implement  currently due to relations and cassandra charm stability issue)
+2. Deploy network-attachment-definition through charm for spgwu instead of deploying directly using kubectl.
+3. Use relations between all component intead of creating service through python-kubernetes-API
+4. Enhance `bundle.yaml` use. 
